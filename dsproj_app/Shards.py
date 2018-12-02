@@ -8,6 +8,7 @@ class Shards:
         self.views = get_array_views()
         self.num_nodes = len(views)
         self.shard_directory = {}
+        # 
         if self.num_nodes >= 2 * self.shard_size:
             for idx, IP_PORT in self.views:
                 self.shard_directory[idx%self.shard_size] = IP_PORT
@@ -32,8 +33,9 @@ class Shards:
     def update_shard_size(self, new_size):
         self.shard_size = new_size
         # maybe call function to reevaluate and redistrbute data here?
+        return True
     
-    
+
         
             
 
