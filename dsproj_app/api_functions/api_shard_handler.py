@@ -2,7 +2,7 @@ from dsproj_app.Shards import Shards
 
 
 #return JSON pls
-def shard_handler(request, method):
+def shard_handler(request, method, shards):
     pass
 
 # PUT /shard/changeShardNumber -d=”num=<number>”

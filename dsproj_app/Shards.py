@@ -17,8 +17,10 @@ class Shards:
             for idx, IP_PORT in self.views:
                 self.shard_directory[idx%self.shard_size] = IP_PORT
         else:
-            # # of nodes = 3 or something liek that. 
-            pass
+            # # of nodes = 3 or something liek that.
+            self.shard_size = 1
+            self.shard_directory[0] = self.views 
+            
         self.my_shard = self.views.index(environ.get("IP_PORT"))%self.shard_size
     
     def get_directory(self):
@@ -34,6 +36,7 @@ class Shards:
         self.shard_size = new_size
         # maybe call function to reevaluate and redistrbute data here?
         return True
+
     
 
         

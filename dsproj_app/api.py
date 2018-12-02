@@ -9,20 +9,21 @@ from dsproj_app.api_functions.all_kvs_requests import keyValue_store_request
 from dsproj_app.api_functions.all_view_requests import view_request
 from dsproj_app.VectorClock import VectorClock
 from dsproj_app.api_functions.api_shard_handler import shard_handler
+from dsproj_app.Shards import Shards
 import json
 
 # VAR vc_position: vector clock position of current node 
 vc_position = environ.get("VIEW").split(',').index(environ.get("IP_PORT"))
 
-# VAR shards: number of shards chosen by user
-shards = environ.get("S")
-print("YOW MO GOW CHUO AH ", hash("peter"))
 # VAR clock: vector clock object of current node
 clock = VectorClock(len(environ.get("VIEW").split(',')), vc_position)
 
 # Var store: store object of current node
 store = Store()
+
+shards = Shards(environ.get("S"))
 latest_timestamp = Timestamp()
+
 details = {
     "store": store,
     "causal_context": None,
@@ -33,7 +34,7 @@ details = {
 #============= SHARD OPERATIONS =============
 @csrf_exempt
 def shards(request):
-    return shard_handler(request, request.method)
+    return shard_handler(request, request.method, shards)
 
 
 # ============= VIEW OPERATIONS =============
