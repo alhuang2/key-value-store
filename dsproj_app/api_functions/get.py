@@ -1,12 +1,10 @@
 import json
 from django.http import JsonResponse
 from dsproj_app.api_functions.get_val_and_payload import val_and_payload
-# from dsproj_app.read_repair import read_repair, read_repair1
 from os import environ
 from dsproj_app.views import get_array_views
 
 UP_TO_DATE_PAYLOAD = {}
-
 
 def get_handling(request, details, key):
     store = details["store"]
@@ -30,28 +28,22 @@ def get_handling(request, details, key):
     if "/keyValue-store/search" in request.path:
         response_content['result'] = "Success"
         response_content['payload'] = payload_json
-        status = 200
         if store.is_exists(key):
             response_content['isExists'] = True
         else:
             response_content['isExists'] = False
-        return JsonResponse(response_content, status=status)
+        return JsonResponse(response_content, status=200)
 
     # OPTION: EMPTY PAYLOAD (USER REQUEST)
-    if not payload_json:  # it is empty
-        IP_PORT = environ.get("IP_PORT")
-        views = get_array_views()
+    if not payload_json:
         payload_json = {
             "vc": curr_node_vc.get_vc(),
-            "pos": views.index(IP_PORT),
+            "pos": get_array_views().index(environ.get("IP_PORT")),
             "tstamp": latest_timestamp.get_timestamp(),
             "causal_context": causal_context,
         }
         causal_context = None
         data = "payload="+json.dumps(payload_json)
-
-        # read repair not needed for asg4
-        # read_repaired_value = read_repair1(key, data)
 
         if store.is_exists(key):
             response_content = {
@@ -67,7 +59,6 @@ def get_handling(request, details, key):
                 "payload": payload_json
             }
             status = 404
-        return JsonResponse(response_content, status=status)
     
     # OPTION: NON-EMPTY PAYLOAD (NODES COMMUNICATING)
     else:
@@ -78,6 +69,8 @@ def get_handling(request, details, key):
             "tstamp": latest_timestamp.get_timestamp(),
             "causal_context": causal_context
         }
+
+        # CONDITION: If store already has the key 
         if store.is_exists(key):
             causal_context = {
                 "key": key,
@@ -89,11 +82,13 @@ def get_handling(request, details, key):
             payload_json['value'] = store.get_item(key)['val']
             response_content['payload'] = payload_json
             cc_key = store.get_item(key)["causal_context"]
+
+            # CONDITION: If causal context exists and requestor's vc > this vc 
             if cc_key != None and curr_node_vc.greater_than_or_equal(payload_json["vc"]) is False:
                 store.add(cc_key, "too_old", None)
                 UP_TO_DATE_PAYLOAD = payload_json
 
-            # if reading an old value, return Payload out of date,
+            # CONDITION: if reading an old value, return Payload out of date,
             # remove val from response_content, and set status to 400
             if store.get_item(key)["val"] == "too_old":
                 del response_content['val']
@@ -102,9 +97,8 @@ def get_handling(request, details, key):
                     "status": 400,
                     "payload": UP_TO_DATE_PAYLOAD
                 }
-                return JsonResponse(response_content, status=400)
-
-            return JsonResponse(response_content, status=200)
+                status = 400
+            status = 200
         else:
             payload_json = {
                 "value": None,
@@ -115,5 +109,4 @@ def get_handling(request, details, key):
             }
             response_content['payload'] = payload_json
             status = 404
-            return JsonResponse(response_content, status=status)
-    return JsonResponse(response_content, status=400)
+    return JsonResponse(response_content, status=status)

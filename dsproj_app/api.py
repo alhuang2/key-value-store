@@ -8,13 +8,13 @@ from dsproj_app.store import Store
 from dsproj_app.api_functions.all_kvs_requests import keyValue_store_request
 from dsproj_app.api_functions.all_view_requests import view_request
 from dsproj_app.VectorClock import VectorClock
-from dsproj_app.Threading import Threading
 import json
 
 # grab vector clock position
 vc_position = environ.get("IP_PORT")
 vc_position = environ.get("VIEW").split(',').index(vc_position)
 shards = environ.get("S")
+print("=====SHARDS: " , shards , " =========================")
 clock = VectorClock(len(environ.get("VIEW").split(',')), vc_position)
 curr_view = {
     "view": environ.get("VIEW")
@@ -28,11 +28,8 @@ details = {
     "latest_timestamp": latest_timestamp
 }
 
-# second argument is interval of gossip (seconds).
-# no gossip for asg4
-# Threading(details, 0.5)
 
-
+#ROUTE: Gets information of Node
 @csrf_exempt
 def node_info(request):
     info = {
@@ -42,44 +39,41 @@ def node_info(request):
     }
     return JsonResponse(json.loads(json.dumps(info)), status=200, safe=False)
 
-
+#ROUTE: Adds view
 @csrf_exempt
 def add_view(request):
     body_unicode = request.body.decode('utf-8')
     body = parse_qs(body_unicode)
-    # print("viewviewviewviewviewviewviewview!!!!!!!!!!!!")
-    # print(body)
     view = body['view'][0]
-    # print(view)
-    # print("viewviewviewviewviewviewviewview")
     environ["VIEW"] = view
     views = environ.get("VIEW").split(',')
     clock.copy_vc([0]*len(views))
     return JsonResponse(view, status=200, safe=False)
 
-
-@csrf_exempt
-def update_node(request):
-    body_unicode = request.body.decode('utf-8')
-    body = parse_qs(body_unicode)
-    payload = (json.loads(body['payload'][0]))['payload']
-
-    store.copy(payload['store'])
-    clock.copy_vc(payload['clock'])
-    latest_timestamp.set_timestamp(payload['latest_timestamp'])
-    return JsonResponse({"status": "Updated node"}, status=200)
-
-
+# ROUTE: GET, PUT, DELETE requests goes here
 @csrf_exempt
 def keyValue_store(request, key):
     return keyValue_store_request(request, details, key)
 
-
+# ROUTE: VIEW requests goes here
 @csrf_exempt
 def view(request):
     return view_request(request, clock)
 
-
+# ROUTE: Edge case for when key not provided
 @csrf_exempt
 def empty_put(request):
     return JsonResponse({"error": "No key provided"}, status=500)
+
+# No need for asg4, this was used for gossip
+#ROUTE: update node
+# @csrf_exempt
+# def update_node(request):
+#     body_unicode = request.body.decode('utf-8')
+#     body = parse_qs(body_unicode)
+#     payload = (json.loads(body['payload'][0]))['payload']
+
+#     store.copy(payload['store'])
+#     clock.copy_vc(payload['clock'])
+#     latest_timestamp.set_timestamp(payload['latest_timestamp'])
+#     return JsonResponse({"status": "Updated node"}, status=200)
