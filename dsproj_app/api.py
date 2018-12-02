@@ -8,17 +8,19 @@ from dsproj_app.store import Store
 from dsproj_app.api_functions.all_kvs_requests import keyValue_store_request
 from dsproj_app.api_functions.all_view_requests import view_request
 from dsproj_app.VectorClock import VectorClock
+from dsproj_app.Shards import Shards
 import json
 
-# grab vector clock position
-vc_position = environ.get("IP_PORT")
-vc_position = environ.get("VIEW").split(',').index(vc_position)
+# VAR vc_position: vector clock position of current node 
+vc_position = environ.get("VIEW").split(',').index(environ.get("IP_PORT"))
+
+# VAR shards: number of shards chosen by user
 shards = environ.get("S")
-print("=====SHARDS: " , shards , " =========================")
+print("YOW MO GOW CHUO AH ", hash("peter"))
+# VAR clock: vector clock object of current node
 clock = VectorClock(len(environ.get("VIEW").split(',')), vc_position)
-curr_view = {
-    "view": environ.get("VIEW")
-}
+
+# Var store: store object of current node
 store = Store()
 latest_timestamp = Timestamp()
 details = {
@@ -67,13 +69,13 @@ def empty_put(request):
 
 # No need for asg4, this was used for gossip
 #ROUTE: update node
-# @csrf_exempt
-# def update_node(request):
-#     body_unicode = request.body.decode('utf-8')
-#     body = parse_qs(body_unicode)
-#     payload = (json.loads(body['payload'][0]))['payload']
+@csrf_exempt
+def update_node(request):
+    body_unicode = request.body.decode('utf-8')
+    body = parse_qs(body_unicode)
+    payload = (json.loads(body['payload'][0]))['payload']
 
-#     store.copy(payload['store'])
-#     clock.copy_vc(payload['clock'])
-#     latest_timestamp.set_timestamp(payload['latest_timestamp'])
-#     return JsonResponse({"status": "Updated node"}, status=200)
+    store.copy(payload['store'])
+    clock.copy_vc(payload['clock'])
+    latest_timestamp.set_timestamp(payload['latest_timestamp'])
+    return JsonResponse({"status": "Updated node"}, status=200)
