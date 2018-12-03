@@ -10,6 +10,7 @@ import re
 import urllib.parse
 import time
 import requests
+import random
 
 
 def put_handling(request, details, key):
@@ -45,7 +46,7 @@ def put_handling(request, details, key):
         return JsonResponse(response_content, status=422)
 
     shard_location = None
-
+    print(payload_json)
     # OPTION: NON-EMPTY PAYLOAD (NODES COMMUNICATING)
     if payload_json:
         req_vc = payload_json['vc']
@@ -72,8 +73,10 @@ def put_handling(request, details, key):
         payload_json['pos'] = req_position
         payload_json['tstamp'] = req_timestamp
         payload_json['causal_context'] = causal_context
+        payload_json['vc'] = req_vc
         causal_context = None
-        shard_location = sha1(key) % shards.get_shard_size()
+        binary_key = sha1(key.encode())
+        shard_location = int(binary_key.hexdigest(), 16) % shards.get_shard_size()
 
     # OPTION: KEY NEVER EXISTED
     if not store.has_key(key):
@@ -91,7 +94,20 @@ def put_handling(request, details, key):
 
     if shard_location == None:
         store.add(key, val, payload_json["causal_context"])
+        return JsonResponse(response_content, status=status)
     elif (not (environ.get("IP_PORT") in shards.get_members_in_ID(shard_location))):
-        requests.put(environ.get("IP_PORT")+"/keyValue-store/"+key, data={})
+        members = shards.get_members_in_ID(shard_location)
+        if members != None:
+            rand_address = random.choice(members)
+            data = "val="+val+"&&payload="+json.dumps(payload_json)
+            return requests.put("http://"+rand_address+"/keyValue-store/"+key, data=data)
+        else:
+            response_content = {
+                "result": "Error",
+                "msg": "No nodes in shard " + shard_location                
+            }
+            status = 400
+            return JsonResponse(response_content, status=status)                        
+
 
     return JsonResponse(response_content, status=status)

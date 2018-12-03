@@ -3,6 +3,8 @@ from django.http import JsonResponse
 from dsproj_app.api_functions.get_val_and_payload import val_and_payload
 from os import environ
 from dsproj_app.views import get_array_views
+from hashlib import sha1
+import random
 
 UP_TO_DATE_PAYLOAD = {}
 
@@ -11,6 +13,7 @@ def get_handling(request, details, key):
     latest_timestamp = details["latest_timestamp"]
     curr_node_vc = details["clock"]
     causal_context = details["causal_context"]
+    shards = details["shards"]
     response_content = {}
 
     payload_json = val_and_payload(request.body)["payload_json"]
@@ -33,8 +36,8 @@ def get_handling(request, details, key):
         else:
             response_content['isExists'] = False
         return JsonResponse(response_content, status=200)
-
-    # OPTION: EMPTY PAYLOAD (USER REQUEST)
+    
+    # OPTION: EMPTY PAYLOAD (USER REQUEST), HASH KEY AND CHECK SHARD DIRECTORY
     if not payload_json:
         payload_json = {
             "vc": curr_node_vc.get_vc(),
@@ -44,6 +47,7 @@ def get_handling(request, details, key):
         }
         causal_context = None
         data = "payload="+json.dumps(payload_json)
+
 
         if store.is_exists(key):
             response_content = {
@@ -59,8 +63,30 @@ def get_handling(request, details, key):
                 "payload": payload_json
             }
             status = 404
-    
-    # OPTION: NON-EMPTY PAYLOAD (NODES COMMUNICATING)
+
+        shard_location = None
+        binary_key = sha1(key.encode())
+        shard_location = int(binary_key.hexdigest(), 16) % shards.get_shard_size()
+
+        # OPTION: WE'RE IN THE WRONG SHARD, REDIRECT REQUEST TO NODE WITH CORRECT SHARD
+        if (not (environ.get("IP_PORT") in shards.get_members_in_ID(shard_location))):
+            members = shards.get_members_in_ID(shard_location)
+            if members != None:
+                rand_address = random.choice(members)
+                return requests.get("http://"+rand_address+"/keyValue-store/"+key, data=payload)
+            else:
+                response_content = {
+                    "result": "Error",
+                    "msg": "No nodes in shard " + shard_location                
+                }
+                status = 400
+                return JsonResponse(response_content, status=status)  
+        else:
+            return JsonResponse(response_content, status=status) 
+            # request a random ip in the same shard
+
+    # OPTION: NON-EMPTY PAYLOAD (NODES COMMUNICATING). WE'RE IN THE
+    # RIGHT CONTAINER, JUST DO NORMAL GET
     else:
         views = get_array_views()
         payload_json = {
@@ -109,4 +135,4 @@ def get_handling(request, details, key):
             }
             response_content['payload'] = payload_json
             status = 404
-    return JsonResponse(response_content, status=status)
+        return JsonResponse(response_content, status=status)
