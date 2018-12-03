@@ -12,6 +12,8 @@ def delete_handling(request, details, key):
     causal_context = details["causal_context"]
 
     response_content = {}
+
+    # OPTION: NO KEY PROVIDED
     if key is None:
         response_content['result'] = 'Error'
         response_content['msg'] = 'Not provided'
@@ -19,6 +21,7 @@ def delete_handling(request, details, key):
 
     payload_json = val_and_payload(request.body)["payload_json"]
 
+    # OPTION: NON-EMPTY PAYLOAD (NODES COMMUNICATING)
     if payload_json:
         req_vc = payload_json['vc']
         req_timestamp = payload_json['tstamp']
@@ -28,6 +31,8 @@ def delete_handling(request, details, key):
             lt = latest_timestamp.max_timestamp(req_timestamp)
             latest_timestamp.set_timestamp(lt)
         req_position = int(payload_json['pos'])
+
+    # OPTION: EMPTY PAYLOAD (USER REQUEST)
     else:
         IP_PORT = environ.get("IP_PORT")
         views = get_array_views()
@@ -42,13 +47,16 @@ def delete_handling(request, details, key):
         payload_json['tstamp'] = req_timestamp
         payload_json['causal_context'] = causal_context
         causal_context = None
-
     status = 200
+
+    # OPTION: KEY DELETED
     if not store.has_key(key) or store.get()[key]['tombstone'] == True:
         response_content['result'] = "Error"
         response_content['msg'] = "Key does not exist"
         response_content['payload'] = payload_json
         status = 404
+
+    # OPTION: KEY EXISTS, SUCCESSFULLY DELETED
     else:
         response_content['result'] = "Success"
         response_content['msg'] = "Key deleted"

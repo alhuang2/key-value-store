@@ -20,5 +20,7 @@ urlpatterns = [
     # GET /view
     # PUT  /view    -d “ip_port=<NewIPPort>”
     # DELETE /view  -d “ip_port=<RemovedIPPort>”
-    path('view', api.view, name="view_get")
+    path('view', api.view, name="view_get"),
+
+    re_path(r'^shard/(?P<route>.*)$', api.shards_api, name='sharding')
 ]

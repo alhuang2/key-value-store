@@ -12,7 +12,7 @@ from dsproj_app.api_functions.api_shard_handler import shard_handler
 from dsproj_app.Shards import Shards
 import json
 
-# VAR vc_position: vector clock position of current node 
+# VAR vc_position: vector clock position of current node
 vc_position = environ.get("VIEW").split(',').index(environ.get("IP_PORT"))
 
 # VAR clock: vector clock object of current node
@@ -28,17 +28,20 @@ details = {
     "store": store,
     "causal_context": None,
     "clock": clock,
-    "latest_timestamp": latest_timestamp
+    "latest_timestamp": latest_timestamp,
+    "shards": shards
 }
 
-#============= SHARD OPERATIONS =============
+# ============= SHARD OPERATIONS =============
+
+
 @csrf_exempt
-def shards(request):
-    return shard_handler(request, request.method, shards)
+def shards_api(request, route):
+    return shard_handler(request, request.method, route, shards)
 
 
 # ============= VIEW OPERATIONS =============
-#ROUTE: Adds view
+# ROUTE: Adds view
 @csrf_exempt
 def add_view(request):
     body_unicode = request.body.decode('utf-8')
@@ -49,23 +52,31 @@ def add_view(request):
     clock.copy_vc([0]*len(views))
     return JsonResponse(view, status=200, safe=False)
 # ROUTE: VIEW requests goes here
+
+
 @csrf_exempt
 def view(request):
     return view_request(request, clock)
 
 # ============= KVS OPERATIONS =============
 # ROUTE: GET, PUT, DELETE requests goes here
+
+
 @csrf_exempt
 def keyValue_store(request, key):
     return keyValue_store_request(request, details, key)
 
 # ROUTE: Edge case for when key not provided
+
+
 @csrf_exempt
 def empty_put(request):
     return JsonResponse({"error": "No key provided"}, status=500)
 
 # ============= NODE INFORMATION =============
-#ROUTE: Gets information of Node
+# ROUTE: Gets information of Node
+
+
 @csrf_exempt
 def node_info(request):
     info = {
@@ -76,7 +87,9 @@ def node_info(request):
     return JsonResponse(json.loads(json.dumps(info)), status=200, safe=False)
 
 # No need for asg4, this was used for gossip
-#ROUTE: update node
+# ROUTE: update node
+
+
 @csrf_exempt
 def update_node(request):
     body_unicode = request.body.decode('utf-8')
