@@ -46,7 +46,22 @@ def put_handling(request, details, key):
         return JsonResponse(response_content, status=422)
 
     shard_location = None
-    print(payload_json)
+    print("Before: ", payload_json)
+
+    # OPTION: KEY NEVER EXISTED
+    if not store.has_key(key):
+        response_content['replaced'] = False
+        response_content['msg'] = 'Added successfully'
+        response_content['payload'] = payload_json
+        status = 200
+
+    # OPTION: KEY ALREADY EXISTS AND IS BEING REPLACED
+    elif store.has_key(key):
+        response_content['replaced'] = True
+        response_content['msg'] = 'Updated successfully'
+        response_content['payload'] = payload_json
+        status = 201
+
     # OPTION: NON-EMPTY PAYLOAD (NODES COMMUNICATING)
     if payload_json:
         req_vc = payload_json['vc']
@@ -78,36 +93,24 @@ def put_handling(request, details, key):
         binary_key = sha1(key.encode())
         shard_location = int(binary_key.hexdigest(), 16) % shards.get_shard_size()
 
-    # OPTION: KEY NEVER EXISTED
-    if not store.has_key(key):
-        response_content['replaced'] = False
-        response_content['msg'] = 'Added successfully'
-        response_content['payload'] = payload_json
-        status = 200
-
-    # OPTION: KEY ALREADY EXISTS AND IS BEING REPLACED
-    elif store.has_key(key):
-        response_content['replaced'] = True
-        response_content['msg'] = 'Updated successfully'
-        response_content['payload'] = payload_json
-        status = 201
-
-    if shard_location == None:
-        store.add(key, val, payload_json["causal_context"])
-        return JsonResponse(response_content, status=status)
-    elif (not (environ.get("IP_PORT") in shards.get_members_in_ID(shard_location))):
-        members = shards.get_members_in_ID(shard_location)
-        if members != None:
-            rand_address = random.choice(members)
-            data = "val="+val+"&&payload="+json.dumps(payload_json)
-            return requests.put("http://"+rand_address+"/keyValue-store/"+key, data=data)
+        if (not (environ.get("IP_PORT") in shards.get_members_in_ID(shard_location))):
+            members = shards.get_members_in_ID(shard_location)
+            if members != None:
+                rand_address = random.choice(members)
+                data = "val="+val+"&&payload={}"
+                response = requests.put("http://"+rand_address+"/keyValue-store/"+key, data=data)
+                return JsonResponse(response.json(), status = response.status_code)
+            else:
+                response_content = {
+                    "result": "Error",
+                    "msg": "No nodes in shard " + shard_location                
+                }
+                status = 400
+                return JsonResponse(response_content, status=status)
         else:
-            response_content = {
-                "result": "Error",
-                "msg": "No nodes in shard " + shard_location                
-            }
-            status = 400
-            return JsonResponse(response_content, status=status)                        
+            store.add(key, val, payload_json["causal_context"])
+            print("I AM ADDING KEY")
+            return JsonResponse(response_content, status=status)
 
 
     return JsonResponse(response_content, status=status)

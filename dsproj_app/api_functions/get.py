@@ -5,6 +5,7 @@ from os import environ
 from dsproj_app.views import get_array_views
 from hashlib import sha1
 import random
+import requests
 
 UP_TO_DATE_PAYLOAD = {}
 
@@ -69,21 +70,29 @@ def get_handling(request, details, key):
         shard_location = int(binary_key.hexdigest(), 16) % shards.get_shard_size()
 
         # OPTION: WE'RE IN THE WRONG SHARD, REDIRECT REQUEST TO NODE WITH CORRECT SHARD
-        if (not (environ.get("IP_PORT") in shards.get_members_in_ID(shard_location))):
+        current_node_not_in_shard = not (environ.get("IP_PORT") in shards.get_members_in_ID(shard_location))
+        if (current_node_not_in_shard):
+            # still jsut check if key is in the store
+            # response_content = {
+            #     "result": "Error",
+            #     "msg": "Key does not exist"
+            # }
+            # status = 404
+            return JsonResponse(response_content, status=status) 
+        else:
             members = shards.get_members_in_ID(shard_location)
             if members != None:
                 rand_address = random.choice(members)
-                return requests.get("http://"+rand_address+"/keyValue-store/"+key, data=payload)
+                data = "payload="+json.dumps(payload_json)
+                response = requests.get("http://"+rand_address+"/keyValue-store/"+key, data=data)
+                return JsonResponse(response.json(), status = response.status_code)
             else:
                 response_content = {
                     "result": "Error",
                     "msg": "No nodes in shard " + shard_location                
                 }
                 status = 400
-                return JsonResponse(response_content, status=status)  
-        else:
-            return JsonResponse(response_content, status=status) 
-            # request a random ip in the same shard
+                return JsonResponse(response_content, status=status) 
 
     # OPTION: NON-EMPTY PAYLOAD (NODES COMMUNICATING). WE'RE IN THE
     # RIGHT CONTAINER, JUST DO NORMAL GET
