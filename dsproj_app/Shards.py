@@ -10,22 +10,24 @@ class Shards:
         self.shard_directory = {}
 
         for idx, IP_PORT in enumerate(self.views):
-            self.shard_directory[idx % self.shard_size] = []
+            self.shard_directory[str(idx % self.shard_size)] = []
 
         if self.num_nodes >= 2 * self.shard_size:
             for idx, IP_PORT in enumerate(self.views):
-                self.shard_directory[idx % self.shard_size].append(IP_PORT)
+                self.shard_directory[str(
+                    idx % self.shard_size)].append(IP_PORT)
         elif self.shard_size >= self.num_nodes and self.num_nodes/2 > 1:
             self.shard_size = self.num_nodes/2
             for idx, IP_PORT in enumerate(self.views):
-                self.shard_directory[idx % self.shard_size].append(IP_PORT)
+                self.shard_directory[str(
+                    idx % self.shard_size)].append(IP_PORT)
         else:
             # # of nodes = 3 or something liek that.
             self.shard_size = 1
-            self.shard_directory[0] = self.views
+            self.shard_directory["0"] = self.views
 
-        self.my_shard = self.views.index(
-            environ.get("IP_PORT")) % self.shard_size
+        self.my_shard = str(self.views.index(
+            environ.get("IP_PORT")) % self.shard_size)
 
     def get_directory(self):
         return self.shard_directory
@@ -38,6 +40,7 @@ class Shards:
         return result_arr
 
     def get_members_in_ID(self, id):
+        id = str(id)
         if id in self.shard_directory:
             return self.shard_directory[id]
         else:

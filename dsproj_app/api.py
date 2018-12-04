@@ -5,8 +5,8 @@ from os import environ
 from urllib.parse import parse_qs
 from dsproj_app.Timestamp import Timestamp
 from dsproj_app.store import Store
-from dsproj_app.api_functions.all_kvs_requests import keyValue_store_request
-from dsproj_app.api_functions.all_view_requests import view_request
+from dsproj_app.api_functions.kvs.all_kvs_requests import keyValue_store_request
+from dsproj_app.api_functions.view.all_view_requests import view_request
 from dsproj_app.VectorClock import VectorClock
 from dsproj_app.api_functions.api_shard_handler import shard_handler
 from dsproj_app.Threading import Threading

@@ -35,7 +35,6 @@ def put_handling(request, details, key):
         response_content['error'] = 'Key not valid'
         return JsonResponse(response_content, status=422)
 
-
     payload_json = val_and_payload(request.body)["payload_json"]
     val = val_and_payload(request.body)["val"]
 
@@ -92,8 +91,8 @@ def put_handling(request, details, key):
         payload_json['vc'] = req_vc
         causal_context = None
         binary_key = sha1(key.encode())
-        shard_location = int(binary_key.hexdigest(), 16) % shards.get_shard_size()
-
+        shard_location = int(binary_key.hexdigest(),
+                             16) % shards.get_shard_size()
 
     # OPTION: KEY NEVER EXISTED
     if not store.has_key(key):
@@ -108,31 +107,31 @@ def put_handling(request, details, key):
         response_content['msg'] = 'Updated successfully'
         response_content['payload'] = payload_json
         status = 201
-        
+
     # if in right shard
     if (shard_location != None and not (environ.get("IP_PORT") in shards.get_members_in_ID(shard_location))):
         members = shards.get_members_in_ID(shard_location)
         if members != None:
             rand_address = random.choice(members)
             data = "val="+val+"&&payload="+json.dumps(payload_json)
-            response = requests.put("http://"+rand_address+"/keyValue-store/"+key, data=data)
-            return JsonResponse(response.json(), status = response.status_code)
+            response = requests.put(
+                "http://"+rand_address+"/keyValue-store/"+key, data=data)
+            return JsonResponse(response.json(), status=response.status_code)
         else:
             response_content = {
                 "result": "Error",
                 "msg": "No nodes in shard " + shard_location,
-                "payload": payload_json                
+                "payload": payload_json
             }
             status = 400
             return JsonResponse(response_content, status=status)
     # if in wrong shard
     else:
-        curr_node_vc.increment_self() 
-        payload_json['vc'] = curr_node_vc.get_vc()       
+        curr_node_vc.increment_self()
+        payload_json['vc'] = curr_node_vc.get_vc()
         store.add(key, val, payload_json["causal_context"])
         print("I AM ADDING KEY")
         response_content["owner"] = shards.get_my_shard()
         return JsonResponse(response_content, status=status)
-
 
     return JsonResponse(response_content, status=status)

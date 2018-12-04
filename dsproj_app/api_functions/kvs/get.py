@@ -9,6 +9,7 @@ import requests
 
 UP_TO_DATE_PAYLOAD = {}
 
+
 def get_handling(request, details, key):
     store = details["store"]
     latest_timestamp = details["latest_timestamp"]
@@ -37,7 +38,7 @@ def get_handling(request, details, key):
         else:
             response_content['isExists'] = False
         return JsonResponse(response_content, status=200)
-    
+
     # OPTION: EMPTY PAYLOAD (USER REQUEST), HASH KEY AND CHECK SHARD DIRECTORY
     if not payload_json:
         payload_json = {
@@ -48,7 +49,6 @@ def get_handling(request, details, key):
         }
         causal_context = None
         data = "payload="+json.dumps(payload_json)
-
 
         if store.is_exists(key):
             response_content = {
@@ -67,22 +67,25 @@ def get_handling(request, details, key):
 
         shard_location = None
         binary_key = sha1(key.encode())
-        shard_location = int(binary_key.hexdigest(), 16) % shards.get_shard_size()
+        shard_location = int(binary_key.hexdigest(),
+                             16) % shards.get_shard_size()
 
         # OPTION: WE'RE IN THE WRONG SHARD, REDIRECT REQUEST TO NODE WITH CORRECT SHARD
-        current_node_not_in_shard = not (environ.get("IP_PORT") in shards.get_members_in_ID(shard_location))
+        current_node_not_in_shard = not (environ.get(
+            "IP_PORT") in shards.get_members_in_ID(shard_location))
         response_content["owner"] = shards.get_my_shard()
         if (current_node_not_in_shard):
             members = shards.get_members_in_ID(shard_location)
             if members != None:
                 rand_address = random.choice(members)
-                response = requests.get("http://"+rand_address+"/keyValue-store/"+key, data="payload="+json.dumps(payload_json))
+                response = requests.get(
+                    "http://"+rand_address+"/keyValue-store/"+key, data="payload="+json.dumps(payload_json))
                 return JsonResponse(response.json(), status=response.status_code)
             else:
                 response_content = {
                     "result": "Error",
                     "msg": "No nodes in shard " + shard_location,
-                    "payload": payload_json                
+                    "payload": payload_json
                 }
                 status = 400
                 return JsonResponse(response_content, status=status)
@@ -100,7 +103,7 @@ def get_handling(request, details, key):
             "causal_context": causal_context
         }
 
-        # CONDITION: If store already has the key 
+        # CONDITION: If store already has the key
         if store.is_exists(key):
             causal_context = {
                 "key": key,
@@ -109,11 +112,11 @@ def get_handling(request, details, key):
             response_content['result'] = "Success"
             response_content['val'] = store.get_item(key)['val']
 
-            payload_json['value'] = store.get_item(key)['val']
+            # payload_json['value'] = store.get_item(key)['val']
             response_content['payload'] = payload_json
             cc_key = store.get_item(key)["causal_context"]
 
-            # CONDITION: If causal context exists and requestor's vc > this vc 
+            # CONDITION: If causal context exists and requestor's vc > this vc
             if cc_key != None and curr_node_vc.greater_than_or_equal(payload_json["vc"]) is False:
                 store.add(cc_key, "too_old", None)
                 UP_TO_DATE_PAYLOAD = payload_json
