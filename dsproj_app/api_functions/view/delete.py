@@ -6,7 +6,9 @@ import json
 import urllib.parse
 
 
-def delete_handling(request, clock):
+def delete_handling(request, details):
+    clock = details['clock']
+    shards = details['shards']
     result_msg = ""
     msg = ""
     statuscode = 200
@@ -19,7 +21,7 @@ def delete_handling(request, clock):
         clock.remove_vc(ip_port_array.index(ip_port_to_delete))
         ip_port_array.remove(ip_port_to_delete)
         environ["VIEW"] = ",".join(str(x) for x in ip_port_array)
-
+        shards.update_view()
         return True
 
     def get_ip(request_body):

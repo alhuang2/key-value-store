@@ -10,12 +10,12 @@ from django.conf import settings
 import urllib.parse
 
 
-def view_request(request, clock):
+def view_request(request, details):
     if (request.method == 'GET'):
         return get_handling(request)
 
     elif (request.method == 'PUT'):
-        return put_handling(request, clock)
+        return put_handling(request, details)
 
     elif(request.method == 'DELETE'):
-        return delete_handling(request, clock)
+        return delete_handling(request, details)

@@ -29,9 +29,11 @@ class Shards:
         self.my_shard = str(self.views.index(
             environ.get("IP_PORT")) % self.shard_size)
 
+    # return shard_id: associated_IPs
     def get_directory(self):
         return self.shard_directory
 
+    # return all th IP's associated with current container's shard
     def get_my_members(self):
         members = self.shard_directory[self.my_shard]
         result_arr = []
@@ -39,6 +41,7 @@ class Shards:
             result_arr.append(member)
         return result_arr
 
+    # gets all the IP's associated with that shard ID
     def get_members_in_ID(self, id):
         id = str(id)
         if id in self.shard_directory:
@@ -58,7 +61,21 @@ class Shards:
     def get_shard_size(self):
         return self.shard_size
 
-    def update_shard_size(self, new_size):
-        self.shard_size = new_size
-        # maybe call function to reevaluate and redistrbute data here?
+    # updates to new number of shards if possible
+    # returns {
+    #   "is_successful": True or False,
+    #   "result": Success, Error
+    #   "shard_ids": "0,1,2", IF TRUE
+    #   "msg": "Not enough nodes for <num_shards> shards", IF FALSE
+    #   “msg”: “Not enough nodes. <number> shards result in a nonfault tolerant shard”}, IF FALSE
+    # }
+    # Status = 200 or 400
+    def update(self, num_shards):
+        if self.num_nodes >= 2 * int(num_shards):
+            # redistribute all data and rehash on the new shard
+            pass    
         return True
+
+    def update_view(self):
+        self.views = get_array_views()
+        self.num_nodes = len(self.views)

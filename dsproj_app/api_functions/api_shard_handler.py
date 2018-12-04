@@ -1,6 +1,10 @@
 from django.http import JsonResponse
 from dsproj_app.Shards import Shards
+from hashlib import sha1
+import urllib.parse
+import requests
 import re
+from json import dumps
 
 
 # return JSON pls
@@ -18,7 +22,8 @@ def shard_handler(request, method, route, shards):
         elif "count" in route:
             return get_key_count_of_ID(shards, route.split('/')[1])
     elif method == 'PUT':
-        pass
+        num_shards = request.body.decode('utf-8').split('=')[1]
+        return put(shards, num_shards)
         # GET /shard/my_id
         # GET /shard/all_ids
         # GET /shard/members/<shard_id>
@@ -45,8 +50,16 @@ def shard_handler(request, method, route, shards):
         # you should not return the second error message in this case.
 
 
-def put():
-    pass
+def put(shards, num_shards):
+    response = shards.update(num_shards)
+    status = None
+    if response['is_successful']:
+    	status = 200
+    	return JsonResponse(dumps(response), status=status)
+    else:
+    	status = 200
+    	return JsonResponse(dumps(response), status=status)
+    	
 
 # returns all id's
 # GET /shard/my_id

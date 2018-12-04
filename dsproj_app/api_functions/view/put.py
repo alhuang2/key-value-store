@@ -6,7 +6,9 @@ import urllib.parse
 import requests
 
 
-def put_handling(request, clock):
+def put_handling(request, details):
+    clock = details['clock']
+    shards = details['shards']
     resultmsg = ""
     msg = ""
     statuscode = 200
@@ -26,6 +28,7 @@ def put_handling(request, clock):
 
     if new_ip_port not in environ["VIEW"]:
         environ["VIEW"] = environ["VIEW"] + "," + new_ip_port
+        shards.update_view()
 
         all_ips = urllib.parse.unquote_plus(environ.get("VIEW"))
 

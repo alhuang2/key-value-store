@@ -59,7 +59,7 @@ def add_view(request):
 
 @csrf_exempt
 def view(request):
-    return view_request(request, clock)
+    return view_request(request, details)
 
 # ============= KVS OPERATIONS =============
 # ROUTE: GET, PUT, DELETE requests goes here
