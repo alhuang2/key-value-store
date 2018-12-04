@@ -30,6 +30,13 @@ class Shards:
     def get_directory(self):
         return self.shard_directory
 
+    def get_my_members(self):
+        members = self.shard_directory[self.my_shard]
+        result_arr = []
+        for member in members:
+            result_arr.append(member)
+        return result_arr
+
     def get_members_in_ID(self, id):
         if id in self.shard_directory:
             return self.shard_directory[id]

@@ -71,6 +71,7 @@ def get_handling(request, details, key):
 
         # OPTION: WE'RE IN THE WRONG SHARD, REDIRECT REQUEST TO NODE WITH CORRECT SHARD
         current_node_not_in_shard = not (environ.get("IP_PORT") in shards.get_members_in_ID(shard_location))
+        response_content["owner"] = shards.get_my_shard()
         if (current_node_not_in_shard):
             members = shards.get_members_in_ID(shard_location)
             if members != None:
@@ -138,4 +139,5 @@ def get_handling(request, details, key):
             }
             response_content['payload'] = payload_json
             status = 404
+        response_content["owner"] = shards.get_my_shard()
     return JsonResponse(response_content, status=status)

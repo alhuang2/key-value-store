@@ -131,6 +131,7 @@ def put_handling(request, details, key):
         payload_json['vc'] = curr_node_vc.get_vc()       
         store.add(key, val, payload_json["causal_context"])
         print("I AM ADDING KEY")
+        response_content["owner"] = shards.get_my_shard()
         return JsonResponse(response_content, status=status)
 
 

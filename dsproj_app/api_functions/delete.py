@@ -6,6 +6,7 @@ from dsproj_app.views import get_array_views
 import requests
 import random
 from hashlib import sha1
+import json
 
 def delete_handling(request, details, key):
     store = details["store"]
@@ -89,6 +90,7 @@ def delete_handling(request, details, key):
         payload_json['vc'] = curr_node_vc.get_vc()
         store.delete_key(key)       
         print("I AM DELETING KEY KEY")
+        response_content["owner"] = shards.get_my_shard()
         return JsonResponse(response_content, status=status)
     # #reconsider to move this
     # curr_node_vc.increment_index(req_position)

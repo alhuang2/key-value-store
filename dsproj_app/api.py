@@ -9,6 +9,7 @@ from dsproj_app.api_functions.all_kvs_requests import keyValue_store_request
 from dsproj_app.api_functions.all_view_requests import view_request
 from dsproj_app.VectorClock import VectorClock
 from dsproj_app.api_functions.api_shard_handler import shard_handler
+from dsproj_app.Threading import Threading
 from dsproj_app.Shards import Shards
 import json
 
@@ -31,6 +32,8 @@ details = {
     "latest_timestamp": latest_timestamp,
     "shards": shards
 }
+
+Threading(details, 2)
 
 # ============= SHARD OPERATIONS =============
 
