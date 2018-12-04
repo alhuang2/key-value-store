@@ -70,8 +70,6 @@ def get_handling(request, details, key):
         shard_location = int(binary_key.hexdigest(), 16) % shards.get_shard_size()
 
         # OPTION: WE'RE IN THE WRONG SHARD, REDIRECT REQUEST TO NODE WITH CORRECT SHARD
-        print(environ.get("IP_PORT"))
-        print(shards.get_members_in_ID(shard_location))
         current_node_not_in_shard = not (environ.get("IP_PORT") in shards.get_members_in_ID(shard_location))
         if (current_node_not_in_shard):
             members = shards.get_members_in_ID(shard_location)
@@ -82,7 +80,8 @@ def get_handling(request, details, key):
             else:
                 response_content = {
                     "result": "Error",
-                    "msg": "No nodes in shard " + shard_location                
+                    "msg": "No nodes in shard " + shard_location,
+                    "payload": payload_json                
                 }
                 status = 400
                 return JsonResponse(response_content, status=status)

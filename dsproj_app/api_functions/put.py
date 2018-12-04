@@ -116,20 +116,19 @@ def put_handling(request, details, key):
             rand_address = random.choice(members)
             data = "val="+val+"&&payload="+json.dumps(payload_json)
             response = requests.put("http://"+rand_address+"/keyValue-store/"+key, data=data)
-            print(response)
-            print("RESPONSEJSON: ")
-            print()
             return JsonResponse(response.json(), status = response.status_code)
         else:
             response_content = {
                 "result": "Error",
-                "msg": "No nodes in shard " + shard_location                
+                "msg": "No nodes in shard " + shard_location,
+                "payload": payload_json                
             }
             status = 400
             return JsonResponse(response_content, status=status)
     # if in wrong shard
     else:
-        curr_node_vc.increment_self()        
+        curr_node_vc.increment_self() 
+        payload_json['vc'] = curr_node_vc.get_vc()       
         store.add(key, val, payload_json["causal_context"])
         print("I AM ADDING KEY")
         return JsonResponse(response_content, status=status)
