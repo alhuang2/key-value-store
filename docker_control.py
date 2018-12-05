@@ -3,9 +3,10 @@
 # Mostly called from hw3_test.py to start containers
 # can be used from command line (largely for testing specific executions by hand)
 
-# last update: 11/19/18 - cleaned up many of the getoutput commands to be strings
-#                       - added some functionality to interface with Blockade (don't worry about that stuff too much) 
+# last update: 11/28/18 - Updated for HW4
 # past updates: 
+# 11/19/18 - cleaned up many of the getoutput commands to be strings
+#          - added some functionality to interface with Blockade (don't worry about that stuff too much) 
 # 11/17/18 - altered to use subnets, because Linux and Mac need them
 #          - also will spin up multiple containers from comand line at once now 
 
@@ -32,7 +33,7 @@ class docker_controller:
     def buildDockerImage(self, tag):
         subprocess.run(self.sudo+["docker", "build", "-t", tag, "."])
 
-    def spinUpDockerContainerNoWait(self, tag, hostIp, networkIP, port, view):
+    def spinUpDockerContainerNoWait(self, tag, hostIp, networkIP, port, view, numShards=1):
         #print("spinning docker container: %s:%s"%(hostIp, port))
 
         
@@ -45,6 +46,7 @@ class docker_controller:
                         "--ip=%s"%networkIP,
                         "-e", "VIEW=%s"%view, 
                         "-e", "IP_PORT=%s:8080"%networkIP, 
+                        "-e", "S=%s"%numShards,
                         "-d", tag]
 
         # print(command)
@@ -58,8 +60,8 @@ class docker_controller:
 
         return instance
 
-    def spinUpDockerContainer(self, tag, hostIp, networkIP, port, view):
-        instance = self.spinUpDockerContainerNoWait(tag, hostIp, networkIP, port, view)
+    def spinUpDockerContainer(self, tag, hostIp, networkIP, port, view, numShards=1):
+        instance = self.spinUpDockerContainerNoWait(tag, hostIp, networkIP, port, view, numShards)
 
         time.sleep(self.spinUpTime)
 
@@ -67,7 +69,7 @@ class docker_controller:
 
         return instance
 
-    def spinUpManyContainers(self, tag, host_ip, network_ip_prefix, port_prefix, number):
+    def spinUpManyContainers(self, tag, host_ip, network_ip_prefix, port_prefix, number, numShards=1):
         view = []
         for i in range(2, 2+number):
             view.append( "%s%s:%s0"%(network_ip_prefix, i, port_prefix) )
@@ -75,7 +77,7 @@ class docker_controller:
         viewString = ",".join(view)
         view = []
         for i in range(2, 2+number):
-            view.append(self.spinUpDockerContainerNoWait(tag, host_ip, network_ip_prefix+str(i), port_prefix+str(i), viewString))
+            view.append(self.spinUpDockerContainerNoWait(tag, host_ip, network_ip_prefix+str(i), port_prefix+str(i), viewString, numShards))
 
         time.sleep(self.spinUpTime)
 
@@ -83,20 +85,35 @@ class docker_controller:
 
         return view
 
+    def addToBlockade(self, instance):
+        subprocess.run(self.sudo + ["blockade", "add", instance])
+
     def prepBlockade(self, instanceList):
         for instance in instanceList:
-            subprocess.run(self.sudo + ["blockade", "add", instance])
+            self.addToBlockade(instance)
 
     def partitionContainer(self, partitionList):
         command = self.sudo + ["blockade", "partition" ] + partitionList
 
         subprocess.run(command)
 
+    def healPartitions(self):
+        command = self.sudo + ["blockade", "join"]
+        subprocess.run(command)
+
+    def blockadeStatus(self):
+        command = self.sudo + ["blockade", "status"]
+        subprocess.run(command)
+
+    def tearDownBlockade(self):
+        command = self.sudo + ["blockade", "destroy"]
+        subprocess.run(command)
+
     def cleanUpDockerContainer(self, instance=None):
         if instance == None:
             #print("cleaning up all docker containers")
 
-            command = " ".join(self.sudo+["docker", "ps", "-aq"])
+            command = " ".join(self.sudo+["docker", "ps", "-q"])
 
             instance = subprocess.getoutput(command)
 
@@ -104,10 +121,8 @@ class docker_controller:
 
             for inst in instance:
                 command = " ".join(self.sudo+["docker", "kill", inst])
-                command_2 = " ".join(self.sudo+["docker", "rm", inst])
 
                 output = subprocess.getoutput(command)
-                output_2 = subprocess.getoutput(command_2)
                 self.dPrint(output, self.verbose, 1)
 
         else:
@@ -132,6 +147,7 @@ if __name__ == '__main__':
     standardNetworkIPPrefix = "192.168.0."
     standardBuildTag = "testing"
     standardNetworkName = "mynetwork"
+    standardShardNumber = "2"
 
     parser = argparse.ArgumentParser(description='docker controller')
     parser.add_argument('-K', dest="is_kill_mode", action="store_true", 
@@ -146,8 +162,8 @@ if __name__ == '__main__':
     parser.add_argument('-t', dest="buildTag", default=standardBuildTag, 
         help="set the build tag. If unset, tag will be: %s"%standardBuildTag)
 
-    parser.add_argument('-n', dest="number", default=1, 
-        help="set number of containers to start. If unset, only one will start")
+    parser.add_argument('-n', dest="number", default=4, 
+        help="set number of containers to start. If unset, 4 will start")
 
     parser.add_argument('--port', dest="localPortPrefix", default=standardPortPrefix, 
         help="set the port to start your container on. Only used with -S. If unset will be: %s"%standardPortPrefix)
@@ -162,6 +178,9 @@ if __name__ == '__main__':
 
     parser.add_argument('--net', dest="network", default=standardNetworkName, 
         help="the name of your network. Only used with -S. If unset will be: %s"%standardNetworkName)
+
+    parser.add_argument('-shardNum', dest="shardNumber", default=standardShardNumber, 
+        help="the number of shards to begin with. Only used with -S. If unset will be: %s"%standardShardNumber)
 
     parser.add_argument('-v', dest="verbose_mode", action="store_true", 
         help="print everything docker would print normally")
@@ -181,6 +200,7 @@ if __name__ == '__main__':
     hostIp = args.hostIp
     networkIpPrefix = args.networkIpPrefix
     networkName = args.network
+    shardNumber = args.shardNumber
 
 
     dc = docker_controller(networkName)
@@ -191,7 +211,7 @@ if __name__ == '__main__':
     if build:
         dc.buildDockerImage(dockerBuildTag)
     if start:
-        dc.spinUpManyContainers(dockerBuildTag, hostIp, networkIpPrefix, localPortPrefix, containerNumber)
+        dc.spinUpManyContainers(dockerBuildTag, hostIp, networkIpPrefix, localPortPrefix, containerNumber, shardNumber)
 
         dc.ps()
     

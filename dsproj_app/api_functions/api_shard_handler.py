@@ -107,6 +107,7 @@ def get_members_in_ID(shards, id):
     response = {}
     status = 400
     members = shards.get_members_in_ID(int(id))
+    members = ",".join(members)
     if members != None:
         response = {
             "result": "Success",

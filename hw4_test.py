@@ -11,17 +11,17 @@ import io
 
 dockerBuildTag = "testing" #put the tag for your docker build here
 
-hostIp = "localhost" 
+hostIp = "localhost"
 
-needSudo = False # obviously if you need sudo, set this to True 
+needSudo = True # obviously if you need sudo, set this to True 
 #contact me imediately if setting this to True breaks things 
 #(I don't have a machine which needs sudo, so it has not been tested, although in theory it should be fine)
 
 port_prefix = "808"
 
-networkName = "mynetwork" # the name of the network you created
+networkName = "ap-sharding-system_vpcbr" # the name of the network you created
 
-networkIpPrefix = "192.168.0." # should be everything up to the last period of the subnet you specified when you 
+networkIpPrefix = "10.0.0." # should be everything up to the last period of the subnet you specified when you 
 # created your network
 
 propogationTime = 3 #sets number of seconds we sleep after certain actions to let data propagate through your system
@@ -114,11 +114,11 @@ class TestHW4(unittest.TestCase):
             if " " in container["containerID"]:
                 self.assertTrue(False, "There is likely a problem in the settings of your ip addresses or network.")
 
-        dc.prepBlockade([instance["containerID"] for instance in self.view])
+        #dc.prepBlockade([instance["containerID"] for instance in self.view])
 
     def tearDown(self):
         dc.cleanUpDockerContainer()
-        dc.tearDownBlockade()
+        #dc.tearDownBlockade()
 
     def getPayload(self, ipPort, key):
         response = checkKey(ipPort, key, {})
@@ -291,7 +291,7 @@ class TestHW4(unittest.TestCase):
 
         shardView = self.getShardView(ipPort)
         for shard in shardView:
-            length = len(shard)
+            length = len(shardView[shard])
             self.assertTrue(length > 1)
 
     # number of shards should not change

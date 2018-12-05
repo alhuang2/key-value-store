@@ -55,30 +55,17 @@ docker exec -it container_id sh
 
 - Make sure containers are cleared by running:
 
-  - docker stop \$(docker ps -aq)
-  - docker rm \$(docker ps -aq)
+  - docker stop $(docker ps -aq)
+  - docker rm $(docker ps -aq)
 
 - Make sure docker network is cleared
 
-  - docker network ls
-    NETWORK ID NAME DRIVER SCOPE
-    1f7977cbc790 bridge bridge local
-    6b91dbd2451f hoocker network rm <ID>st host local
-    <ID> oldApp bridge local <---remove
-    921be80170f1 none null local
-    -docker network rm <ID>
-
 - Build!
 
-  - docker build -t assignment2 .
-
-- Run subnetwork
-
-  - sudo docker network create --subnet=10.0.0.0/16 mynet
-  - sudo docker network create --subnet=10.0.0.0/16 ap-distributed-system_vpcbr
+  - docker build -t testing:latest .
 
 - Run testscript
-  - python2 test_HW2.py
+  - python3 <test_script_name>.py
 
 ### How to debug server
 
