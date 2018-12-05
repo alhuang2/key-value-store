@@ -1,4 +1,4 @@
-# from dsproj_app.views import get_array_views
+from dsproj_app.views import get_array_views
 from dsproj_app.store import Store
 from dsproj_app.VectorClock import VectorClock
 from urllib.parse import parse_qs
@@ -21,10 +21,10 @@ class Threading(object):
         self.clock = details['clock']
         self.latest_timestamp = details['latest_timestamp']
         self.causal_context = details['causal_context']
-        self.shards = details['shards']
         thread = threading.Thread(target=self.run, args=())
         thread.daemon = True
 
+        print("NEW THREAD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         thread.start()                                  # Start the execution
 
     def gossip(self):
@@ -34,20 +34,15 @@ class Threading(object):
         latest_timestamp = self.latest_timestamp
         causal_context = self.causal_context
 
-        # members = self.shards.get_members_in_ID(self.shards.get_my_shard())
-        # print("==========MEMBERS:==========", members)
-        # # random_IP_PORT = random.choice(members)
-        # if members != None:
-        #     members.remove(environ.get("IP_PORT"))
-        #     random_IP_PORT = random.choice(members)
-        # else:
-        #     return
-
-
-        random_IP_PORT = random.choice(self.shards.get_my_members())
-
+        views = get_array_views(environ.get("IP_PORT"))
+        random_IP_PORT = random.choice(views)
         url = "http://" + random_IP_PORT + "/node-info"
 
+        # print("gossip")
+        # try:
+        #     gresponse = requests.get(url, data={})
+        # except:
+        #     return print("ERROR")
         try:
             gresponse = requests.get(url, data={})
             data = gresponse.json()
