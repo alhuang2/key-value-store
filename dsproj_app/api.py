@@ -11,6 +11,7 @@ from dsproj_app.VectorClock import VectorClock
 from dsproj_app.api_functions.api_shard_handler import shard_handler
 from dsproj_app.Threading import Threading
 from dsproj_app.Shards import Shards
+from dsproj_app.api_functions.broadcast import broadcast
 import json
 
 # VAR vc_position: vector clock position of current node
@@ -30,10 +31,11 @@ details = {
     "causal_context": None,
     "clock": clock,
     "latest_timestamp": latest_timestamp,
-    "shards": shards
+    "shards": shards,
+    "should_run_gossip": True
 }
 
-Threading(details, 2)
+Threading(details, .5)
 
 # ============= SHARD OPERATIONS =============
 
@@ -42,6 +44,21 @@ Threading(details, 2)
 def shards_api(request, route):
     return shard_handler(request, request.method, route, details)
 
+@csrf_exempt
+def toggle_gossip(request):
+    body_unicode = request.body.decode('utf-8')
+    body = parse_qs(body_unicode)
+    toggle = body['toggle'][0]
+    is_broadcaster = body['is_broadcaster'][0]
+    details['should_run_gossip'] = toggle
+    if not is_broadcaster:
+        broadcast({
+            "toggle": toggle, 
+            "is_broadcaster": False
+            }, 
+            "PUT", "/toggle_gossip", environ.get("IP_PORT")
+        )
+    return JsonResponse({"toggle": toggle}, status=200)
 
 @csrf_exempt
 def reset_time(request):

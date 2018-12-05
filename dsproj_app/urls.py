@@ -19,6 +19,6 @@ urlpatterns = [
     path('add-view', api.add_view, name="add_view"),
     path('reset', api.reset_time, name="reset"),
     path('view', api.view, name="view_get"),
-
+    path('toggle_gossip', api.toggle_gossip, name="toggle_gossip"),
     re_path(r'^shard/(?P<route>.*)$', api.shards_api, name='sharding')
 ]

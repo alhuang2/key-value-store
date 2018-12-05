@@ -7,18 +7,12 @@ import urllib.parse
 from random import choice
 
 
-def delete_ip(shards, clock, request_body, ip_port_to_delete):
-    if ip_port_to_delete not in environ.get("VIEW"):
-        return False
-
+def delete_ip(shards, clock, ip_port_to_delete, ips):
     ip_port_array = environ.get("VIEW").split(",")
     clock.remove_vc(ip_port_array.index(ip_port_to_delete))
     ip_port_array.remove(ip_port_to_delete)
     environ["VIEW"] = ",".join(str(x) for x in ip_port_array)
     shards.update_view()
-    # also, update the shard_directory. and check if rehashing needs to be done
-    # shard.update()
-    return True
 
 
 def get_ip(request_body):
@@ -40,7 +34,7 @@ def broadcast_delete_ip(ips, ip_port_to_delete, curr_ip_port):
                             data={'ip_port': ip_port_to_delete})
 
 
-def reconstruct_shard(shards, index_to_delete, ip_port_to_delete):
+def reconstruct_shard(shards, index_to_delete, ip_port_to_delete, store):
     shard_directory = shards.get_directory()
 
     shard_index_of_target = index_to_delete % shards.get_shard_size()
@@ -52,23 +46,17 @@ def reconstruct_shard(shards, index_to_delete, ip_port_to_delete):
         members_of_shard_id = shards.get_members_in_ID(shard_id)
         if len(members_of_shard_id) == len(shard_members_of_target) + 1:
             random_node = choice(members_of_shard_id)
-            # is this where you re-distribute / rehash everything?
             requests.put("http://"+ip_port_to_delete+"/reset")
             shards.remove_node(shard_id, random_node)
             shards.add_node(shard_index_of_target, random_node)
             shards.remove_node(shard_index_of_target, ip_port_to_delete)
+            shards.build_directory()
 
     if(ip_port_to_delete in shards.get_members_in_ID(shard_index_of_target)):
         shards.remove_node(shard_index_of_target, ip_port_to_delete)
         if len(shards.get_members_in_ID(shard_index_of_target)) == 1:
-            shards.update_shard_size(len(shard_directory) - 1)
-            lonely_node = shards.get_members_in_ID(shard_index_of_target)[0]
-            shards.remove_node(shard_index_of_target, lonely_node)
+            shards.update(shards.get_shard_size() - 1, store)
 
-            new_node_index = get_index_of_ip_in_views(
-                lonely_node) % shards.get_shard_size()
-
-            shards.add_node(new_node_index, lonely_node)
 
 # update Shards directory by calling shards.update_view()
 def delete_handling(request, details):
@@ -91,15 +79,16 @@ def delete_handling(request, details):
         "msg": "Successfully removed %s from view" % ip_port_to_delete
     }
 
-    index_to_delete = get_index_of_ip_in_views(ip_port_to_delete)
+    ips = get_array_views()
 
+    if ip_port_to_delete in ips:
+        index_to_delete = get_index_of_ip_in_views(ip_port_to_delete)
 
-    is_exists = delete_ip(shards, clock, request.body, ip_port_to_delete)
+        delete_ip(shards, clock, ip_port_to_delete, ips )
 
-    reconstruct_shard(shards, index_to_delete, ip_port_to_delete)
+        reconstruct_shard(shards, index_to_delete, ip_port_to_delete, details['store'])
 
-    if is_exists:
-        broadcast_delete_ip(get_array_views(), ip_port_to_delete, curr_ip_port)
+        broadcast_delete_ip(ips, ip_port_to_delete, curr_ip_port)
     else:
         response_content = {
             "result": "Error",

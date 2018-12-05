@@ -1,3 +1,8 @@
+import requests
+import random
+from hashlib import sha1
+from os import environ
+
 class Store:
 
     # tomstone = True means deleted
@@ -39,12 +44,30 @@ class Store:
         else:
             return False
     
-    def rehash_key(self, directory, num_shard):
-        for key, obj in self.store.items():
-            pass
+    def rehash_keys(self, directory, num_shards):
+        copy_store = self.copy()
+        self.store = {}
+        data = {"toggle": False, "is_broadcaster": True}
+        requests.put("http://"+environ.get("IP_PORT")+"/toggle_gossip", data=data)
+        for key, obj in copy_store.items():
+            binary_key = sha1(key.encode())
+            shard_location = int(binary_key.hexdigest(),16) % num_shards
+            members = directory[str(shard_location)]
+            rand_address = random.choice(members)
 
-    def copy(self, store):
-        self.store = store
+            data = "val="+obj['val']+"&&payload={}"
+            requests.put(
+                "http://"+rand_address+"/keyValue-store/"+key, data=data
+            )
+        data = {"toggle": True, "is_broadcaster": True}
+        requests.put("http://"+environ.get("IP_PORT")+"/toggle_gossip", data=data)
+                        
+
+    def copy(self):
+        new_store = {}
+        for key, obj in self.store.items():
+            new_store[key] = obj
+        return new_store
 
     def length(self):
         return len(self.store)

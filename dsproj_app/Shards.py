@@ -8,26 +8,7 @@ class Shards:
         self.views = get_array_views()
         self.num_nodes = len(self.views)
         self.shard_directory = {}
-
-        for idx, IP_PORT in enumerate(self.views):
-            self.shard_directory[str(idx % self.shard_size)] = []
-
-        if self.num_nodes >= 2 * self.shard_size:
-            for idx, IP_PORT in enumerate(self.views):
-                self.shard_directory[str(
-                    idx % self.shard_size)].append(IP_PORT)
-        elif self.shard_size >= self.num_nodes and self.num_nodes/2 > 1:
-            self.shard_size = self.num_nodes/2
-            for idx, IP_PORT in enumerate(self.views):
-                self.shard_directory[str(
-                    idx % self.shard_size)].append(IP_PORT)
-        else:
-            # # of nodes = 3 or something liek that.
-            self.shard_size = 1
-            self.shard_directory["0"] = self.views
-
-        self.my_shard = str(self.views.index(
-            environ.get("IP_PORT")) % self.shard_size)
+        self.build_directory()
 
     # return shard_id: associated_IPs
     def get_directory(self):
@@ -61,8 +42,30 @@ class Shards:
     def get_shard_size(self):
         return self.shard_size
 
-    def update_shard_size(self, size):
-        self.shard_size = size
+    def build_directory(self):
+        
+
+        for idx, IP_PORT in enumerate(self.views):
+            self.shard_directory[str(idx % self.shard_size)] = []
+
+        if self.num_nodes >= 2 * self.shard_size:
+            for idx, IP_PORT in enumerate(self.views):
+                self.shard_directory[str(
+                    idx % self.shard_size)].append(IP_PORT)
+        elif self.shard_size >= self.num_nodes and self.num_nodes/2 > 1:
+            self.shard_size = self.num_nodes/2
+            for idx, IP_PORT in enumerate(self.views):
+                self.shard_directory[str(
+                    idx % self.shard_size)].append(IP_PORT)
+        else:
+            self.shard_size = 1
+            self.shard_directory["0"] = self.views
+
+        if environ.get("IP_PORT") in self.views:   
+            self.my_shard = str(self.views.index(
+                environ.get("IP_PORT")) % self.shard_size)
+        else:
+            self.my_shard = None
 
     # updates to new number of shards if possible
     # returns {
@@ -86,8 +89,7 @@ class Shards:
             self.shard_size = num_shards
             self.reset_shard()
             # rehashes the shard directory with new shard #
-            for idx, IP_PORT in enumerate(self.views):
-                self.shard_directory[str(idx % self.shard_size)].append(IP_PORT)
+            self.build_directory()
             store.rehash_keys(self.shard_directory, self.shard_size)
         elif num_shards == 1:
             # combine all shard data and put it on all nodes

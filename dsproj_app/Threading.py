@@ -16,6 +16,7 @@ class Threading(object):
         :type interval: int
         :param interval: Check interval, in seconds
         """
+        self.should_run_gossip = details['should_run_gossip']
         self.interval = interval
         self.store = details['store']
         self.clock = details['clock']
@@ -26,6 +27,9 @@ class Threading(object):
         thread.daemon = True
 
         thread.start()                                  # Start the execution
+
+    def stop(self):
+        pass
 
     def gossip(self):
 
@@ -43,11 +47,11 @@ class Threading(object):
         # else:
         #     return
 
-
         random_IP_PORT = random.choice(self.shards.get_my_members())
 
         url = "http://" + random_IP_PORT + "/node-info"
-
+        print("get my members!!!!!!!!!!!!!!!!!!!!!")
+        print(self.shards.get_my_members())
         try:
             gresponse = requests.get(url, data={})
             data = gresponse.json()
@@ -111,7 +115,7 @@ class Threading(object):
 
     def run(self):
         """ Method that runs forever """
-        while True:
+        while self.should_run_gossip:
             # Do something
             self.gossip()
             sleep(self.interval)
