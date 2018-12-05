@@ -15,8 +15,8 @@ class Shards:
         return self.shard_directory
 
     # return all th IP's associated with current container's shard
-    def get_my_members(self):
-        members = self.shard_directory[self.my_shard]
+    def get_my_members(self, my_shard_idx):
+        members = self.shard_directory[my_shard_idx]
         result_arr = []
         for member in members:
             result_arr.append(member)
@@ -118,3 +118,12 @@ class Shards:
         self.shard_directory = {}
         for idx, IP_PORT in enumerate(self.views):
             self.shard_directory[str(idx % self.shard_size)] = []
+
+    def find_shardID_given_address(self, given_address):
+        for key in self.get_directory():
+            print("GODSHITTTT", key)
+            print("GODSHIT", self.get_directory()[key])
+            for address in self.get_directory()[key]:
+                if given_address == address:
+                    return key
+                

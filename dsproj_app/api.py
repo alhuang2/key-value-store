@@ -35,7 +35,7 @@ details = {
     "should_run_gossip": True
 }
 
-Threading(details, .5)
+Threading(details, 1)
 
 # ============= SHARD OPERATIONS =============
 
@@ -127,7 +127,8 @@ def update_node(request):
     body = parse_qs(body_unicode)
     payload = (json.loads(body['payload'][0]))['payload']
 
-    store.copy(payload['store'])
+    # store.copy(payload['store']) # wrong use of store.copy()!!!!!!!!!!!!!!
+    payload['store'] = store.copy()
     clock.copy_vc(payload['clock'])
     latest_timestamp.set_timestamp(payload['latest_timestamp'])
     return JsonResponse({"status": "Updated node"}, status=200)

@@ -74,3 +74,6 @@ class Store:
 
     def reset(self):
         self.store = {}
+
+    def overwrite_store(self, new_store):
+        self.store = new_store

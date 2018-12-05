@@ -1,6 +1,7 @@
 # from dsproj_app.views import get_array_views
 from dsproj_app.store import Store
 from dsproj_app.VectorClock import VectorClock
+from dsproj_app.views import get_array_views
 from urllib.parse import parse_qs
 from os import environ
 from time import sleep
@@ -47,71 +48,106 @@ class Threading(object):
         # else:
         #     return
 
-        random_IP_PORT = random.choice(self.shards.get_my_members())
+        view_arr = environ.get("VIEW").split(",")
+        # print(view_arr)
+        # print("========================")
+        if environ.get("IP_PORT") in view_arr and len(view_arr)!=1:
+            # print(environ.get("VIEW"))
+            # print("AHHHH", self.shards.get_directory())
+            # print(environ.get("IP_PORT"))
+            target_shard = self.shards.find_shardID_given_address(environ.get("IP_PORT"))
+            shards_directory = self.shards.get_directory()
+            # print(target_shard)
+            ip_port_options = []
+            for ipport in shards_directory[target_shard]:
+                ip_port_options.append(ipport)
+            ip_port_options.remove(environ.get("IP_PORT"))
+            random_IP_PORT = random.choice(ip_port_options)
 
-        url = "http://" + random_IP_PORT + "/node-info"
-        print("get my members!!!!!!!!!!!!!!!!!!!!!")
-        print(self.shards.get_my_members())
-        try:
-            gresponse = requests.get(url, data={})
-            data = gresponse.json()
-            is_current_clock_greater = clock.greater_than_or_equal(
-                data['clock'])
-            # print("a few lines after gossip")
+            url = "http://" + random_IP_PORT + "/node-info"
+            print("get my members!!!!!!!!!!!!!!!!!!!!!")
+            print("this is shard members", shards_directory[target_shard])
+            print(self.shards.get_shard_size())
+            try:
+                gresponse = requests.get(url, data={})
+                data = gresponse.json() # node to be gossiped (incoming node)
+                print("#################3")
+                print(data)
+                print(self.store.get())
+                print(self.clock.get_vc())
+                print(self.latest_timestamp.get_timestamp())
+                print("#####################")
+                is_current_clock_greater = clock.greater_than_or_equal(
+                    data['clock']) #fucks up at this line
+                # print("a few lines after gossip")
 
-            # print("LOCAL clock = ", clock.get_vc())
-            # print("OTHER clock = ", data['clock'])
+                print("LOCAL clock = ", clock.get_vc())
+                print("OTHER clock = ", data['clock'])
 
-            if len(clock.get_vc()) != len(data['clock']):
-                return "0"
+                if len(clock.get_vc()) != len(data['clock']):
+                    return "0"
+                print("THIS IS STORE-FIRST!!!!!!!!!!!", self.store.get())
+                # print("========================")
 
-            # print("========================")
+                # print("data['store']=", data['store'])
+                # print("type = ", type(data['store']))
+                # print("store.get()=", store.get())
+                # print("type = ", type(store.get()))
 
-            # print("data['store']=", data['store'])
-            # print("type = ", type(data['store']))
-            # print("store.get()=", store.get())
-            # print("type = ", type(store.get()))
-
-            if (is_current_clock_greater == "equal"):
-                # print("clocks are equal... do nothing")
-                pass
-            elif(is_current_clock_greater == True):
-                text = "vector"
-                new_item = self.merge_and_clobber_loser(
-                    data['store'], store.get())
-                store.copy(new_item)
-                self.update_gossip_node(
-                    store, clock, latest_timestamp, random_IP_PORT, text)
-            elif(is_current_clock_greater == False):
-                text = "vector"
-                new_item = self.merge_and_clobber_loser(
-                    store.get(), data['store'])
-                data['store'] = new_item
-                self.update_local_node(
-                    data, clock, latest_timestamp, text, store)
-            else:
-                text = "timestamp"
-                localvc = clock.get_vc()
-                for i, val in enumerate(data['clock']):
-                    highest_val = max(localvc[i], val)
-                    clock.update_vc(i, highest_val)
-                    data['clock'][i] = highest_val
-
-                if latest_timestamp.get_timestamp() > float(data['latest_timestamp']):
+                if (is_current_clock_greater == "equal"):
+                    print("clocks are equal... do nothing")
+                    pass
+                elif(is_current_clock_greater == True):
+                    print("current_clock_greater is true")
+                    text = "vector"
                     new_item = self.merge_and_clobber_loser(
                         data['store'], store.get())
-                    store.copy(new_item)
+                    # store.copy(new_item)    # this line doesn't make sense
+                    data['store'] = new_item
                     self.update_gossip_node(
-                        store, clock, latest_timestamp, random_IP_PORT, text
-                    )
-                else:
+                        store, clock, latest_timestamp, random_IP_PORT, text)
+
+                    print("THIS IS STORE!!!!!!!!!!!", self.store.get())
+                elif(is_current_clock_greater == False):
+                    print("current_clock_greater is false")
+                    text = "vector"
                     new_item = self.merge_and_clobber_loser(
                         store.get(), data['store'])
+                    print("THIS IS NEWITEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",new_item)
+                    print("asshole")
+                    print(data['store'])
                     data['store'] = new_item
+                    print("THIS IS DATA[store]",data['store'])
                     self.update_local_node(
                         data, clock, latest_timestamp, text, store)
-        except:
-            print("================error in gossip================")
+                    print("anus")
+                    # print("THIS IS STORE!!!!!!!!!!!", self.store)
+
+                else:
+                    text = "timestamp"
+                    localvc = clock.get_vc()
+                    for i, val in enumerate(data['clock']):
+                        highest_val = max(localvc[i], val)
+                        clock.update_vc(i, highest_val)
+                        data['clock'][i] = highest_val
+
+                    if latest_timestamp.get_timestamp() > float(data['latest_timestamp']):
+                        new_item = self.merge_and_clobber_loser(
+                            data['store'], store.get())
+                        store.copy(new_item)
+                        self.update_gossip_node(
+                            store, clock, latest_timestamp, random_IP_PORT, text
+                        )
+                    else:
+                        new_item = self.merge_and_clobber_loser(
+                            store.get(), data['store'])
+                        data['store'] = new_item
+                        self.update_local_node(
+                            data, clock, latest_timestamp, text, store)
+            except:
+                print("================error in gossip================")
+
+
 
     def run(self):
         """ Method that runs forever """
@@ -157,5 +193,10 @@ class Threading(object):
     def update_local_node(self, data, clock, latest_timestamp, text, store):
         clock.copy_vc(data['clock'])
         latest_timestamp.set_timestamp(data['latest_timestamp'])
-        self.store.copy(data['store'])
+
+        # store.copy returns an object
+        print("FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUCCCCCCKKKKKKKKK")
+        # print(self.store.copy())
+        # data['store'] = self.store.get()
+        self.store.overwrite_store(data['store'])
         print("local node updated via ", text)

@@ -76,6 +76,7 @@ def get_handling(request, details, key):
         if (current_node_not_in_shard):
             members = shards.get_members_in_ID(shard_location)
             if members != None:
+                print("THIS IS MEMBERS!!!", members)
                 rand_address = random.choice(members)
                 data = "payload="+json.dumps(payload_json)
                 response = requests.get(

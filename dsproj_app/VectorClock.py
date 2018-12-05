@@ -49,7 +49,7 @@ class VectorClock:
         # alternate overpowering each other's components
         bad1 = False
         bad2 = False
-        for i in range(0, self.size):
+        for i in range(0, self.size-1):
             if self.vc[i] < other_vc[i]:
                 bad1 = True
             if self.vc[i] > other_vc[i]:
