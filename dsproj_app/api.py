@@ -128,7 +128,8 @@ def update_node(request):
     payload = (json.loads(body['payload'][0]))['payload']
 
     # store.copy(payload['store']) # wrong use of store.copy()!!!!!!!!!!!!!!
-    payload['store'] = store.copy()
+    # payload['store'] = store.copy()
+    store.overwrite_store(payload['store'])
     clock.copy_vc(payload['clock'])
     latest_timestamp.set_timestamp(payload['latest_timestamp'])
     return JsonResponse({"status": "Updated node"}, status=200)
