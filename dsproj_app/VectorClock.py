@@ -1,11 +1,12 @@
 from ast import literal_eval
 
+
 class VectorClock:
 
     def __init__(self, size, index):
         self.vc = [0]*size
         self.index = index
-        self.size = size    
+        self.size = size
 
     def get_vc(self):
         return self.vc
@@ -16,7 +17,6 @@ class VectorClock:
     def get_index(self):
         return self.index
 
-
     def update_vc(self, index, new_val):
         self.vc[index] = new_val
 
@@ -24,11 +24,11 @@ class VectorClock:
         self.vc = other_vc
 
     def increment_index(self, index):
-        self.vc[index]+=1
+        self.vc[index] += 1
 
     def increment_self(self):
-        self.vc[self.index]+=1
-    
+        self.vc[self.index] += 1
+
     def push(self):
         self.vc.append(0)
 
@@ -36,7 +36,7 @@ class VectorClock:
         self.vc.pop(index)
 
     # True: self.vc is less than other_vc
-    # False: self.vc is greater than other_vc 
+    # False: self.vc is greater than other_vc
     # None is concurrent.
     def greater_than_or_equal(self, other_vc):
         # print("self {}".format(self.vc))
@@ -45,7 +45,7 @@ class VectorClock:
         if self.vc == other_vc:
             return "equal"
 
-        # records 2 instances where vectors 
+        # records 2 instances where vectors
         # alternate overpowering each other's components
         bad1 = False
         bad2 = False
@@ -66,4 +66,7 @@ class VectorClock:
         # then, self.vs is bigger
         elif bad2 == True:
             return True
-    
+
+    def reset(self):
+        for idx, val in enumerate(self.vc):
+            self.vc[idx] = 0

@@ -13,7 +13,9 @@ services:
       - "8080:${PORT}"
     environment:
       - IP_PORT=10.0.0.20:8080
-      - VIEW=10.0.0.20:8080,10.0.0.21:8080,10.0.0.22:8080
+      - VIEW=10.0.0.20:8080,10.0.0.21:8080,10.0.0.22:8080,10.0.0.23:8080
+      - S=2
+      - PYTHONHASHSEED=0
     networks:
       vpcbr:
         ipv4_address: ${IP}
@@ -30,7 +32,9 @@ services:
       - "8081:${PORT}"
     environment:
       - IP_PORT=10.0.0.21:8080
-      - VIEW=10.0.0.20:8080,10.0.0.21:8080,10.0.0.22:8080
+      - VIEW=10.0.0.20:8080,10.0.0.21:8080,10.0.0.22:8080,10.0.0.23:8080
+      - S=2
+      - PYTHONHASHSEED=0
     networks:
       vpcbr:
         ipv4_address: 10.0.0.21
@@ -47,7 +51,9 @@ services:
       - "8082:${PORT}"
     environment:
       - IP_PORT=10.0.0.22:8080
-      - VIEW=10.0.0.20:8080,10.0.0.21:8080,10.0.0.22:8080
+      - VIEW=10.0.0.20:8080,10.0.0.21:8080,10.0.0.22:8080,10.0.0.23:8080
+      - S=2
+      - PYTHONHASHSEED=0
     networks:
       vpcbr:
         ipv4_address: 10.0.0.22
@@ -63,7 +69,9 @@ services:
       - "8083:${PORT}"
     environment:
       - IP_PORT=10.0.0.23:8080
-      - VIEW=10.0.0.23:8080
+      - VIEW=10.0.0.20:8080,10.0.0.21:8080,10.0.0.22:8080,10.0.0.23:8080
+      - S=2
+      - PYTHONHASHSEED=0
     networks:
       vpcbr:
         ipv4_address: 10.0.0.23

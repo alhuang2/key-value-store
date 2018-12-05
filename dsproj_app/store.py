@@ -44,3 +44,6 @@ class Store:
 
     def length(self):
         return len(self.store)
+
+    def reset(self):
+        self.store = {}
