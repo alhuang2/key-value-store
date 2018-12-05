@@ -17,7 +17,7 @@ urlpatterns = [
     path('node-info', api.node_info, name="node_info"),
     path('update-node', api.update_node, name="update_node"),
     path('add-view', api.add_view, name="add_view"),
-    path('reset', api.reset, name="reset"),
+    path('reset', api.reset_time, name="reset"),
     path('view', api.view, name="view_get"),
 
     re_path(r'^shard/(?P<route>.*)$', api.shards_api, name='sharding')

@@ -38,6 +38,10 @@ class Store:
             return True
         else:
             return False
+    
+    def rehash_key(self, directory, num_shard):
+        for key, obj in self.store.items():
+            pass
 
     def copy(self, store):
         self.store = store

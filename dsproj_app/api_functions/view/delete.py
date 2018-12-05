@@ -4,9 +4,10 @@ from dsproj_app.views import get_array_views, get_index_of_ip_in_views
 import requests
 import json
 import urllib.parse
+from random import choice
 
 
-def delete_ip(request_body, ip_port_to_delete):
+def delete_ip(shards, clock, request_body, ip_port_to_delete):
     if ip_port_to_delete not in environ.get("VIEW"):
         return False
 
@@ -14,6 +15,9 @@ def delete_ip(request_body, ip_port_to_delete):
     clock.remove_vc(ip_port_array.index(ip_port_to_delete))
     ip_port_array.remove(ip_port_to_delete)
     environ["VIEW"] = ",".join(str(x) for x in ip_port_array)
+    shards.update_view()
+    # also, update the shard_directory. and check if rehashing needs to be done
+    # shard.update()
     return True
 
 
@@ -24,7 +28,7 @@ def get_ip(request_body):
     return ip_port_to_delete
 
 
-def remove_ip(ips, ip_port_to_delete, curr_ip_port):
+def broadcast_delete_ip(ips, ip_port_to_delete, curr_ip_port):
     if ip_port_to_delete == environ.get("IP_PORT"):
         environ["VIEW"] = ip_port_to_delete
     for curr_ip_port in ips:
@@ -36,18 +40,18 @@ def remove_ip(ips, ip_port_to_delete, curr_ip_port):
                             data={'ip_port': ip_port_to_delete})
 
 
-def reconstruct_shard(shards, ip_port_to_delete):
+def reconstruct_shard(shards, index_to_delete, ip_port_to_delete):
     shard_directory = shards.get_directory()
 
-    shard_index_of_target = get_index_of_ip_in_views(
-        ip_port_to_delete) % shards.get_shard_size()
+    shard_index_of_target = index_to_delete % shards.get_shard_size()
 
     shard_members_of_target = shards.get_members_in_ID(shard_index_of_target)
 
-    for shard_id, nodes in shard_directory.iteritems():
+    print(shard_directory)
+    for shard_id, nodes in shard_directory.items():
         members_of_shard_id = shards.get_members_in_ID(shard_id)
         if len(members_of_shard_id) == len(shard_members_of_target) + 1:
-            random_node = random.choice(members_of_shard_id)
+            random_node = choice(members_of_shard_id)
             # is this where you re-distribute / rehash everything?
             requests.put("http://"+ip_port_to_delete+"/reset")
             shards.remove_node(shard_id, random_node)
@@ -66,10 +70,12 @@ def reconstruct_shard(shards, ip_port_to_delete):
 
             shards.add_node(new_node_index, lonely_node)
 
-
+# update Shards directory by calling shards.update_view()
 def delete_handling(request, details):
     clock = details['clock']
     shards = details['shards']
+    curr_ip_port = environ.get("IP_PORT")
+    
     result_msg = ""
     msg = ""
     statuscode = 200
@@ -77,6 +83,7 @@ def delete_handling(request, details):
     number_of_shards = environ.get("S")
     response_content = {}
 
+    print("VIEWS: ", environ.get("VIEW"))
     ip_port_to_delete = get_ip(request.body)
 
     response_content = {
@@ -84,11 +91,15 @@ def delete_handling(request, details):
         "msg": "Successfully removed %s from view" % ip_port_to_delete
     }
 
-    reconstruct_shard(shards, ip_port_to_delete)
+    index_to_delete = get_index_of_ip_in_views(ip_port_to_delete)
 
-    is_exists = delete_ip(request.body, ip_port_to_delete)
+
+    is_exists = delete_ip(shards, clock, request.body, ip_port_to_delete)
+
+    reconstruct_shard(shards, index_to_delete, ip_port_to_delete)
+
     if is_exists:
-        remove_ip(all_ips.split(","), ips, ip_port_to_delete, curr_ip_port)
+        broadcast_delete_ip(get_array_views(), ip_port_to_delete, curr_ip_port)
     else:
         response_content = {
             "result": "Error",

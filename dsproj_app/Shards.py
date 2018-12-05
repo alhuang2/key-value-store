@@ -73,7 +73,7 @@ class Shards:
     #   “msg”: “Not enough nodes. <number> shards result in a nonfault tolerant shard”}, IF FALSE
     # }
     # Status = 200 or 400
-    def update(self, num_shards):
+    def update(self, num_shards, store):
         num_shards = int(num_shards)
         response = {
             "is_successful": False,
@@ -83,8 +83,12 @@ class Shards:
         if self.num_nodes >= 2 * num_shards:
             # redistribute all data and rehash on the new shard
             # call your rehash function here. should refer to store maybe? pass in shards instance if needed
-            self.shard_size = num_shards`
-            pass
+            self.shard_size = num_shards
+            self.reset_shard()
+            # rehashes the shard directory with new shard #
+            for idx, IP_PORT in enumerate(self.views):
+                self.shard_directory[str(idx % self.shard_size)].append(IP_PORT)
+            store.rehash_keys(self.shard_directory, self.shard_size)
         elif num_shards == 1:
             # combine all shard data and put it on all nodes
             # maybe the same thing as the one above ? ^^
@@ -96,8 +100,7 @@ class Shards:
         else:
             response['msg'] = "Not enough nodes. "+num_shards + \
                 " shards result in a nonfault tolerant shard"
-
-        return True
+        return response
 
     def update_view(self):
         self.views = get_array_views()
@@ -108,6 +111,8 @@ class Shards:
 
     def add_node(self, index, node_to_add):
         self.shard_directory[str(index)].append(node_to_add)
-
-    def rehash_node(self, node_to_rehash):
-        pass
+    
+    def reset_shard(self):
+        self.shard_directory = {}
+        for idx, IP_PORT in enumerate(self.views):
+            self.shard_directory[str(idx % self.shard_size)] = []

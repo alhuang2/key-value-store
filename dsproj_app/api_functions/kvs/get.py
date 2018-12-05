@@ -67,7 +67,7 @@ def get_handling(request, details, key):
         shard_location = None
         binary_key = sha1(key.encode())
         shard_location = int(binary_key.hexdigest(),
-                             16) % shards.get_shard_size()
+                            16) % shards.get_shard_size()
 
         # OPTION: WE'RE IN THE WRONG SHARD, REDIRECT REQUEST TO NODE WITH CORRECT SHARD
         current_node_not_in_shard = not (environ.get(
@@ -77,8 +77,9 @@ def get_handling(request, details, key):
             members = shards.get_members_in_ID(shard_location)
             if members != None:
                 rand_address = random.choice(members)
+                data = "payload="+json.dumps(payload_json)
                 response = requests.get(
-                    "http://"+rand_address+"/keyValue-store/"+key, data="payload="+json.dumps(payload_json))
+                    "http://"+rand_address+"/keyValue-store/"+key, data=data)
                 return JsonResponse(response.json(), status=response.status_code)
             else:
                 response_content = {
@@ -107,9 +108,9 @@ def get_handling(request, details, key):
 
             # payload_json['value'] = store.get_item(key)['val']
             # CONDITION: If causal context exists and requestor's vc > this vc
-            if cc_key != None and curr_node_vc.greater_than_or_equal(payload_json["vc"]) is False:
-                store.add(cc_key, "too_old", None)
-                UP_TO_DATE_PAYLOAD = payload_json
+            # if cc_key != None and curr_node_vc.greater_than_or_equal(payload_json["vc"]) is False:
+            #     store.add(cc_key, "too_old", None)
+            #     UP_TO_DATE_PAYLOAD = payload_json
 
             # CONDITION: if reading an old value, return Payload out of date,
             # remove val from response_content, and set status to 400

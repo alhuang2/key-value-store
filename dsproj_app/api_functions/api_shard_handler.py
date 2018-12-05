@@ -8,7 +8,9 @@ from json import dumps
 
 
 # return JSON pls
-def shard_handler(request, method, route, shards):
+def shard_handler(request, method, route, details):
+    shards = details['shards']
+    store = details['store']
     # route is <route>/<some_id>/<etc>
     print("route: ", route)
     if method == 'GET':
@@ -23,7 +25,7 @@ def shard_handler(request, method, route, shards):
             return get_key_count_of_ID(shards, route.split('/')[1])
     elif method == 'PUT':
         num_shards = request.body.decode('utf-8').split('=')[1]
-        return put(shards, num_shards)
+        return put(shards, num_shards, store)
         # GET /shard/my_id
         # GET /shard/all_ids
         # GET /shard/members/<shard_id>
@@ -50,8 +52,8 @@ def shard_handler(request, method, route, shards):
         # you should not return the second error message in this case.
 
 
-def put(shards, num_shards):
-    response = shards.update(num_shards)
+def put(shards, num_shards, store):
+    response = shards.update(num_shards, store)
     status = None
     if response['is_successful']:
     	status = 200

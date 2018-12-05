@@ -40,7 +40,7 @@ Threading(details, 2)
 
 @csrf_exempt
 def shards_api(request, route):
-    return shard_handler(request, request.method, route, shards)
+    return shard_handler(request, request.method, route, details)
 
 
 @csrf_exempt
