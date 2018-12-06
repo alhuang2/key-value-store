@@ -27,7 +27,7 @@ def put_handling(request, details):
     if new_ip_port not in environ["VIEW"]:
         environ["VIEW"] = environ["VIEW"] + "," + new_ip_port
         shards.update_view()
-
+        shards.build_directory()
         all_ips = urllib.parse.unquote_plus(environ.get("VIEW"))
 
         # inefficient broadcast. change later
