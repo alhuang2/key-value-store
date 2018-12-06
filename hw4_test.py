@@ -263,9 +263,7 @@ class TestHW4(unittest.TestCase):
         for member in shard:
             self.assertEqual(self.checkGetMyShardId(member), ID)
 
-        changeShardNumber(lonelyNode, 2, 200, "Success", "0,1")
-
-    def changeShardNumber(self, ipPort, newNumber, expectedStatus, expectedResult, shardIds):
+    def checkChangeShardNumber(self, ipPort, newNumber, expectedStatus, expectedResult, shardIds):
         response = changeShardNumber(ipPort, newNumber)
 
         self.assertEqual(response.status_code, expectedStatus)
@@ -278,65 +276,94 @@ class TestHW4(unittest.TestCase):
 ## Tests start here ##
 ##########################################################################
 
-    # check that they do things, 
-    # not that they do the right thing, 
-    # just that they don't return an error
-    def test_a_shard_endpoints(self):
+    # # check that they do things, 
+    # # not that they do the right thing, 
+    # # just that they don't return an error
+    # def test_a_shard_endpoints(self):
+    #     ipPort = self.view[0]["testScriptAddress"]
+
+    #     ID = self.checkGetMyShardId(ipPort)
+    #     self.checkGetAllShardIds(ipPort)
+    #     self.checkGetMembers(ipPort, ID)
+    #     self.getShardView(ipPort)
+
+    # # check everyone agrees about who is where
+    # def test_b_shard_consistent_view(self):
+    #     ipPort = self.view[0]["testScriptAddress"]
+
+    #     shardView = self.getShardView(ipPort)
+    #     for ID in shardView.keys():
+    #         self.checkConsistentMembership(ipPort, ID)
+
+    # # no node is alone in a shard
+    # def test_c_shard_no_lonely_nodes(self):
+    #     ipPort = self.view[0]["testScriptAddress"]
+
+    #     shardView = self.getShardView(ipPort)
+    #     for shard in shardView:
+    #         length = len(shardView[shard])
+    #         self.assertTrue(length > 1)
+
+    # # number of shards should not change
+    # def test_d_shard_add_node(self):
+    #     ipPort = self.view[0]["testScriptAddress"]
+
+    #     initialShardIDs = self.checkGetAllShardIds(ipPort)
+
+    #     newPort = "%s8"%port_prefix
+    #     newView = "%s8:8080"%(networkIpPrefix)
+
+    #     viewSting = getViewString(self.view)
+    #     viewSting += ",%s"%newView
+    #     newNode = dc.spinUpDockerContainer(dockerBuildTag, hostIp, networkIpPrefix+"8", newPort, viewSting, 3)
+
+    #     self.confirmAddNode(ipPort=ipPort, 
+    #                         newAddress=newView, 
+    #                         expectedStatus=200, 
+    #                         expectedResult="Success", 
+    #                         expectedMsg="Successfully added %s to view"%newView)
+
+    #     time.sleep(propogationTime)
+    #     newShardIDs = self.checkGetAllShardIds(ipPort)
+
+    #     self.assertEqual(len(newShardIDs), len(initialShardIDs))
+
+
+    # # removing a node decrease number of shards
+    # def test_e_shard_remove_node(self):
+    #     ipPort = self.view[0]["testScriptAddress"]
+    #     removedNode = self.view.pop()["networkIpPortAddress"]
+
+    #     initialShardIDs = self.checkGetAllShardIds(ipPort)
+
+    #     self.confirmDeleteNode(ipPort=ipPort, 
+    #                            removedAddress=removedNode, 
+    #                            expectedStatus=200, 
+    #                            expectedResult="Success", 
+    #                            expectedMsg="Successfully removed %s from view"%removedNode)
+
+    #     time.sleep(propogationTime)
+
+    #     newShardIDs = self.checkGetAllShardIds(ipPort)
+
+    #     self.assertEqual(len(newShardIDs), len(initialShardIDs)-1)
+
+    # change S to 2 from 3 using changeShardNumber endpoint
+    def test_f_decrease_shard(self):
         ipPort = self.view[0]["testScriptAddress"]
-
-        ID = self.checkGetMyShardId(ipPort)
-        self.checkGetAllShardIds(ipPort)
-        self.checkGetMembers(ipPort, ID)
-        self.getShardView(ipPort)
-
-    # check everyone agrees about who is where
-    def test_b_shard_consistent_view(self):
-        ipPort = self.view[0]["testScriptAddress"]
-
-        shardView = self.getShardView(ipPort)
-        for ID in shardView.keys():
-            self.checkConsistentMembership(ipPort, ID)
-
-    # no node is alone in a shard
-    def test_c_shard_no_lonely_nodes(self):
-        ipPort = self.view[0]["testScriptAddress"]
-
-        shardView = self.getShardView(ipPort)
-        for shard in shardView:
-            length = len(shardView[shard])
-            self.assertTrue(length > 1)
-
-    # number of shards should not change
-    def test_d_shard_add_node(self):
-        ipPort = self.view[0]["testScriptAddress"]
+        targetNode = self.view[-1]["networkIpPortAddress"]
+        self.checkChangeShardNumber(targetNode, 2, 200, "Success", "0,1")
+        time.sleep(propogationTime)
 
         initialShardIDs = self.checkGetAllShardIds(ipPort)
 
-        newPort = "%s8"%port_prefix
-        newView = "%s8:8080"%(networkIpPrefix)
+        self.assertEqual(2, len(initialShardIDs)-1)
 
-        viewSting = getViewString(self.view)
-        viewSting += ",%s"%newView
-        newNode = dc.spinUpDockerContainer(dockerBuildTag, hostIp, networkIpPrefix+"8", newPort, viewSting, 3)
-
-        self.confirmAddNode(ipPort=ipPort, 
-                            newAddress=newView, 
-                            expectedStatus=200, 
-                            expectedResult="Success", 
-                            expectedMsg="Successfully added %s to view"%newView)
-
-        time.sleep(propogationTime)
-        newShardIDs = self.checkGetAllShardIds(ipPort)
-
-        self.assertEqual(len(newShardIDs), len(initialShardIDs))
-
-
-    # removing a node decrease number of shards
-    def test_e_shard_remove_node(self):
+    # removing 1 node from shard with 2 nodes result number of shards to decrease and lonely node to join other nodes
+    def test_g_remove_node_causes_shard_decrease(self):
         ipPort = self.view[0]["testScriptAddress"]
         removedNode = self.view.pop()["networkIpPortAddress"]
-
-        initialShardIDs = self.checkGetAllShardIds(ipPort)
+        targetNode = self.view[-1]["networkIpPortAddress"]
 
         self.confirmDeleteNode(ipPort=ipPort, 
                                removedAddress=removedNode, 
@@ -346,19 +373,30 @@ class TestHW4(unittest.TestCase):
 
         time.sleep(propogationTime)
 
-        newShardIDs = self.checkGetAllShardIds(ipPort)
+        # check first shard (may be different wrt different implementations)
+        members = self.checkGetMembers(ipPort, 0)
 
-        self.assertEqual(len(newShardIDs), len(initialShardIDs)-1)
+        lonelyNodeInFirstShard = targetNode in members
 
-    # change S to 2 from 3 using changeShardNumber endpoint
-    def test_f_decrease_shard(self):
+        self.assertEqual(True, lonelyNodeInFirstShard)
+
+    # changing shard size to 1 have all membbers in the only shard
+    def test_h_change_shard_size_to_one(self):
         ipPort = self.view[0]["testScriptAddress"]
-        targetNode = self.view[-1]["networkIpPortAddress"]
-        changeShardNumber(targetNode, 2, 200, "Success", "0,1")
-        
+
+        self.checkChangeShardNumber(ipPort, 1, 200, "Success", "0")
+
         time.sleep(propogationTime)
 
-        self.assertEqual(len(newShardIDs), len(initialShardIDs)-1)
+        members = self.checkGetMembers(ipPort, 0)
+
+        # check if all members are present
+        for view in self.views:
+            currIpInShard = view['networkIpPortAddress'] in members
+            self.assertEqual(True, currIpInShard)
+
+    
+
 
     
     # Test increasing node. PUT node.

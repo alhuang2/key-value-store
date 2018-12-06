@@ -1,4 +1,4 @@
-docker kill $(docker ps -aq)
+docker stop $(docker ps -aq)
 docker rm $(docker ps -aq)
 docker build -t testing:latest .
 python3 hw4_test.py

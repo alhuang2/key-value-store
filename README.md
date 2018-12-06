@@ -59,9 +59,13 @@ docker exec -it container_id sh
   - docker rm $(docker ps -aq)
 
 - Make sure docker network is cleared
+  - docker network rm $(docker network ls -aq)
+
+- Run subnetwork
+  - sudo docker network create --subnet=10.0.0.0/16 mynet
+  - sudo docker network create --subnet=10.0.0.0/16 ap-sharding-system
 
 - Build!
-
   - docker build -t testing:latest .
 
 - Run testscript
