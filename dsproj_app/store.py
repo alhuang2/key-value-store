@@ -82,19 +82,3 @@ class Store:
 
     def overwrite_store(self, new_store):
         self.store = new_store
-
-    def get_store_at_ipport(ipport):
-        response = requests.get("http://"+ipport+"/node-info")
-        response = response.json()
-        return response['store']
-
-    def kvs_size_of_shard(shards, shard_ID):
-        unique_key_collection = []
-        ip_list = shards.get_members_in_ID(shard_ID)
-        for ipport in ip_list:
-            store_of_ipport = Store.get_store_at_ipport(ipport)
-            for key in store_of_ipport:
-                if not(key in unique_key_collection):
-                    unique_key_collection.append(key)
-        return len(unique_key_collection)
-        # pass

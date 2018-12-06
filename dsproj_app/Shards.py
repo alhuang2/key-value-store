@@ -69,8 +69,8 @@ class Shards:
             #     environ.get("IP_PORT")) % self.shard_size)
         else:
             self.my_shard = None
-        print("THIS IS MY SHARD: ", self.my_shard)
-        print("MY SHARD DIRECTORY:", self.shard_directory)
+        # print("THIS IS MY SHARD: ", self.my_shard)
+        # print("MY SHARD DIRECTORY:", self.shard_directory)
 
     # updates to new number of shards if possible
     # returns {

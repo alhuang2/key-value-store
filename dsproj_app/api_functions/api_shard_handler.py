@@ -164,7 +164,7 @@ def get_key_count_of_ID(shards, store, id):
     # in that shard for their store size
     # else, we're in right shard and just return our store size
     my_shard_id = int(shards.get_my_shard())
-    print("MY SHARD ID: ", my_shard_id)
+    # print("MY SHARD ID: ", my_shard_id)
     if my_shard_id == int(id):
         status = 200
         response = {
@@ -177,21 +177,7 @@ def get_key_count_of_ID(shards, store, id):
         if members != None:
             random_ip = random.choice(members)
             url = "http://"+random_ip+"/shard/count/"+str(id)
-            print("URL TO GET COUNT : ", url)
+            # print("URL TO GET COUNT : ", url)
             response = requests.get(url, data={})
             return JsonResponse(response.json(), status=response.status_code)
-    # if members != None:
-    # if shards.get_members_in_ID(id) != None:
-    #     count = Store.kvs_size_of_shard(shards, id)
-    #     response = {
-    #         "result": "Success",
-    #         "Count": count
-    #     }
-    #     status = 200
-    # else:
-    #     response = {
-    #         "result": "Error",
-    #         "msg": "No shard with id"+id
-    #     }
-    #     status = 404
     return JsonResponse(response, status=status)
