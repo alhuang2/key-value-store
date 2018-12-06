@@ -26,8 +26,10 @@ def put_handling(request, details):
 
     if new_ip_port not in environ["VIEW"]:
         environ["VIEW"] = environ["VIEW"] + "," + new_ip_port
-        shards.update_view()
 
+        shards.update_view()
+        shards.build_directory()
+        
         all_ips = urllib.parse.unquote_plus(environ.get("VIEW"))
 
         # inefficient broadcast. change later
@@ -37,7 +39,7 @@ def put_handling(request, details):
                 curr_ip_port != environ.get("IP_PORT"))
             if current_ip_is_not_new_ip and current_ip_is_not_client_ip:
                 requests.put("http://"+curr_ip_port+"/view",
-                             data={'ip_port': new_ip_port})
+                            data={'ip_port': new_ip_port})
         clock.push()
         resultmsg = "Success"
         msg = "Successfully added " + new_ip_port + " to view"

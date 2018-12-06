@@ -264,7 +264,7 @@ class TestHW4(unittest.TestCase):
             self.assertEqual(self.checkGetMyShardId(member), ID)
 
     def checkChangeShardNumber(self, ipPort, newNumber, expectedStatus, expectedResult, shardIds):
-        response = changeShardNumber(ipPort, newNumber)
+        response = changeShardNumber(ipPort, str(newNumber))
 
         self.assertEqual(response.status_code, expectedStatus)
 
@@ -348,37 +348,37 @@ class TestHW4(unittest.TestCase):
 
     #     self.assertEqual(len(newShardIDs), len(initialShardIDs)-1)
 
-    # change S to 2 from 3 using changeShardNumber endpoint
-    def test_f_decrease_shard(self):
-        ipPort = self.view[0]["testScriptAddress"]
-        targetNode = self.view[-1]["networkIpPortAddress"]
-        self.checkChangeShardNumber(targetNode, 2, 200, "Success", "0,1")
-        time.sleep(propogationTime)
+    # # change S to 2 from 3 using changeShardNumber endpoint
+    # def test_f_decrease_shard(self):
+    #     ipPort = self.view[0]["testScriptAddress"]
+    #     targetNode = self.view[-1]["networkIpPortAddress"]
+    #     self.checkChangeShardNumber(targetNode, 2, 200, "Success", "0,1")
+    #     time.sleep(propogationTime)
 
-        initialShardIDs = self.checkGetAllShardIds(ipPort)
+    #     initialShardIDs = self.checkGetAllShardIds(ipPort)
 
-        self.assertEqual(2, len(initialShardIDs)-1)
+    #     self.assertEqual(2, len(initialShardIDs)-1)
 
-    # removing 1 node from shard with 2 nodes result number of shards to decrease and lonely node to join other nodes
-    def test_g_remove_node_causes_shard_decrease(self):
-        ipPort = self.view[0]["testScriptAddress"]
-        removedNode = self.view.pop()["networkIpPortAddress"]
-        targetNode = self.view[-1]["networkIpPortAddress"]
+    # # removing 1 node from shard with 2 nodes result number of shards to decrease and lonely node to join other nodes
+    # def test_g_remove_node_causes_shard_decrease(self):
+    #     ipPort = self.view[0]["testScriptAddress"]
+    #     removedNode = self.view.pop()["networkIpPortAddress"]
+    #     targetNode = self.view[-1]["networkIpPortAddress"]
 
-        self.confirmDeleteNode(ipPort=ipPort, 
-                               removedAddress=removedNode, 
-                               expectedStatus=200, 
-                               expectedResult="Success", 
-                               expectedMsg="Successfully removed %s from view"%removedNode)
+    #     self.confirmDeleteNode(ipPort=ipPort, 
+    #                            removedAddress=removedNode, 
+    #                            expectedStatus=200, 
+    #                            expectedResult="Success", 
+    #                            expectedMsg="Successfully removed %s from view"%removedNode)
 
-        time.sleep(propogationTime)
+    #     time.sleep(propogationTime)
 
-        # check first shard (may be different wrt different implementations)
-        members = self.checkGetMembers(ipPort, 0)
+    #     # check first shard (may be different wrt different implementations)
+    #     members = self.checkGetMembers(ipPort, 0)
 
-        lonelyNodeInFirstShard = targetNode in members
+    #     lonelyNodeInFirstShard = targetNode in members
 
-        self.assertEqual(True, lonelyNodeInFirstShard)
+    #     self.assertEqual(True, lonelyNodeInFirstShard)
 
     # changing shard size to 1 have all membbers in the only shard
     def test_h_change_shard_size_to_one(self):
@@ -390,12 +390,37 @@ class TestHW4(unittest.TestCase):
 
         members = self.checkGetMembers(ipPort, 0)
 
+        print("membas: ", members)
+
         # check if all members are present
-        for view in self.views:
+        for view in self.view:
             currIpInShard = view['networkIpPortAddress'] in members
             self.assertEqual(True, currIpInShard)
 
-    
+    # changing shard size from 1 to 2 should have 3 members in each shard
+    def test_i_change_shard_size_from_one_to_two(self):
+
+        self.test_h_change_shard_size_to_one()
+
+
+        ipPortOne = self.view[0]["testScriptAddress"]
+        ipPortTwo = self.view[1]["testScriptAddress"]
+
+        members = self.checkGetMembers(ipPortOne, 0)
+        membersTwo = self.checkGetMembers(ipPortTwo, 0)
+        print("membas2a: ", members)
+        print("membas2b: ", membersTwo)
+
+        self.checkChangeShardNumber(ipPortOne, 2, 200, "Success", "0,1")
+
+        membersOne = self.checkGetMembers(ipPortOne, 0)
+        membersTwo = self.checkGetMembers(ipPortTwo, 0)
+
+        print("one: ", membersOne)
+        print("two: ", membersTwo)
+
+        self.assertEqual(3, len(membersOne))
+        self.assertEqual(3, len(membersTwo))
 
 
     

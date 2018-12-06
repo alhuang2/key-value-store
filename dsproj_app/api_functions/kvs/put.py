@@ -91,7 +91,7 @@ def put_handling(request, details, key):
         details["causal_context"] = None
         binary_key = sha1(key.encode())
         shard_location = int(binary_key.hexdigest(),
-                             16) % shards.get_shard_size()
+                            16) % shards.get_shard_size()
 
     # OPTION: KEY NEVER EXISTED
     if not store.has_key(key):

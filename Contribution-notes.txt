@@ -27,13 +27,7 @@ alyehuan:
 - View Request
 
 smohan6:
-- Application design and structure
-- Clean code / Code consistency
-- Classes
-- Docker builds
-- PUT and GET
-- View Request
-
+- Did not contribute
 
 TEAM:
 We worked many hours together coding together

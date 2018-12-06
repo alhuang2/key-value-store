@@ -55,17 +55,20 @@ docker exec -it container_id sh
 
 - Make sure containers are cleared by running:
 
-  - docker stop $(docker ps -aq)
-  - docker rm $(docker ps -aq)
+  - docker stop \$(docker ps -aq)
+  - docker rm \$(docker ps -aq)
 
 - Make sure docker network is cleared
-  - docker network rm $(docker network ls -aq)
+
+  - docker network prune
 
 - Run subnetwork
+
   - sudo docker network create --subnet=10.0.0.0/16 mynet
   - sudo docker network create --subnet=10.0.0.0/16 ap-sharding-system
 
 - Build!
+
   - docker build -t testing:latest .
 
 - Run testscript

@@ -1,4 +1,4 @@
-docker stop $(docker ps -aq)
-docker rm $(docker ps -aq)
-docker build -t testing:latest .
-python3 hw4_test.py
+sudo docker stop $(docker ps -aq)
+sudo docker rm $(docker ps -aq)
+sudo docker build -t testing:latest .
+sudo python3 hw4_test.py
