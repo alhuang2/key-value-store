@@ -47,19 +47,19 @@ def put_handling(request, details, key):
     shard_location = None
     print("Before: ", payload_json)
 
-    # OPTION: KEY NEVER EXISTED
-    if not store.has_key(key):
-        response_content['replaced'] = False
-        response_content['msg'] = 'Added successfully'
-        response_content['payload'] = payload_json
-        status = 200
+    # # OPTION: KEY NEVER EXISTED
+    # if not store.has_key(key):
+    #     response_content['replaced'] = False
+    #     response_content['msg'] = 'Added successfully'
+    #     response_content['payload'] = payload_json
+    #     status = 201
 
-    # OPTION: KEY ALREADY EXISTS AND IS BEING REPLACED
-    elif store.has_key(key):
-        response_content['replaced'] = True
-        response_content['msg'] = 'Updated successfully'
-        response_content['payload'] = payload_json
-        status = 201
+    # # OPTION: KEY ALREADY EXISTS AND IS BEING REPLACED
+    # elif store.has_key(key):
+    #     response_content['replaced'] = True
+    #     response_content['msg'] = 'Updated successfully'
+    #     response_content['payload'] = payload_json
+    #     status = 200
 
     # OPTION: NON-EMPTY PAYLOAD (NODES COMMUNICATING)
     if payload_json:
@@ -98,14 +98,14 @@ def put_handling(request, details, key):
         response_content['replaced'] = False
         response_content['msg'] = 'Added successfully'
         response_content['payload'] = payload_json
-        status = 200
+        status = 201
 
     # OPTION: KEY ALREADY EXISTS AND IS BEING REPLACED
     elif store.has_key(key):
         response_content['replaced'] = True
         response_content['msg'] = 'Updated successfully'
         response_content['payload'] = payload_json
-        status = 201
+        status = 200
 
     members = shards.get_members_in_ID(shard_location)
     # if in right shard

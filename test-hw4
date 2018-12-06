@@ -1,4 +1,3 @@
-sudo docker stop $(docker ps -aq)
+sudo docker kill $(docker ps -aq)
 sudo docker rm $(docker ps -aq)
 sudo docker build -t testing:latest .
-sudo python3 hw4_test.py
