@@ -221,6 +221,7 @@ class TestHW4(unittest.TestCase):
         self.assertEqual(data['result'], expectedResult)
         self.assertEqual(data['msg'], expectedMsg)
 
+
     def checkGetMyShardId(self, ipPort, expectedStatus=200):
         response = getShardId(ipPort)
 
@@ -261,6 +262,17 @@ class TestHW4(unittest.TestCase):
         shard = self.checkGetMembers(ipPort, ID)
         for member in shard:
             self.assertEqual(self.checkGetMyShardId(member), ID)
+
+        changeShardNumber(lonelyNode, 2, 200, "Success", "0,1")
+
+    def changeShardNumber(self, ipPort, newNumber, expectedStatus, expectedResult, shardIds):
+        response = changeShardNumber(ipPort, newNumber)
+
+        self.assertEqual(response.status_code, expectedStatus)
+
+        data = response.json()
+        self.assertEqual(data['result'], expectedResult)
+        self.assertEqual(data['shard_ids'], shardIds)
 
 ##########################################################################
 ## Tests start here ##
@@ -338,10 +350,18 @@ class TestHW4(unittest.TestCase):
 
         self.assertEqual(len(newShardIDs), len(initialShardIDs)-1)
 
-    # remove a node which resulting a difference of 2 between
-    # shard members causes redistributions
-    def test_f_remove_node(self):
-        pass
+    # change S to 2 from 3 using changeShardNumber endpoint
+    def test_f_decrease_shard(self):
+        ipPort = self.view[0]["testScriptAddress"]
+        targetNode = self.view[-1]["networkIpPortAddress"]
+        changeShardNumber(targetNode, 2, 200, "Success", "0,1")
+        
+        time.sleep(propogationTime)
+
+        self.assertEqual(len(newShardIDs), len(initialShardIDs)-1)
+
+    
+    # Test increasing node. PUT node.
 
 
 
