@@ -25,7 +25,7 @@ needSudo = True  # obviously if you need sudo, set this to True
 port_prefix = "808"
 
 # the name of the network you created
-networkName = "ap-distributed-system_vpcbr"
+networkName = "ap-sharding-system_vpcbr"
 
 # should be everything up to the last period of the subnet you specified when you
 networkIpPrefix = "10.0.0."

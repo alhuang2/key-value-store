@@ -172,12 +172,11 @@ def get_key_count_of_ID(shards, store, id):
             "Count": store.length()
         }
         return JsonResponse(response, status=status)
-    else:
-        members = shards.get_members_in_ID(int(id))
-        if members != None:
-            random_ip = random.choice(members)
-            url = "http://"+random_ip+"/shard/count/"+str(id)
-            # print("URL TO GET COUNT : ", url)
-            response = requests.get(url, data={})
-            return JsonResponse(response.json(), status=response.status_code)
-    return JsonResponse(response, status=status)
+        
+    members = shards.get_members_in_ID(int(id))
+    if members != None:
+        random_ip = random.choice(members)
+        url = "http://"+random_ip+"/shard/count/"+str(id)
+        # print("URL TO GET COUNT : ", url)
+        response = requests.get(url, data={})
+        return JsonResponse(response.json(), status=response.status_code)

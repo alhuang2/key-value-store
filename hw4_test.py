@@ -263,14 +263,23 @@ class TestHW4(unittest.TestCase):
         for member in shard:
             self.assertEqual(self.checkGetMyShardId(member), ID)
 
-    def checkChangeShardNumber(self, ipPort, newNumber, expectedStatus, expectedResult, shardIds):
+    def checkChangeShardNumber(self, ipPort, newNumber, expectedStatus, expectedResult, expectedShardIds):
         response = changeShardNumber(ipPort, str(newNumber))
 
         self.assertEqual(response.status_code, expectedStatus)
 
         data = response.json()
         self.assertEqual(data['result'], expectedResult)
-        self.assertEqual(data['shard_ids'], shardIds)
+        self.assertEqual(data['shard_ids'], expectedShardIds)
+
+    def checkGetCount(self, ipPort, ID, expectedStatus, expectedResult, expectedCount):
+        response = getCount(ipPort, ID)
+
+        self.assertEqual(response.status_code, expectedStatus)
+
+        data = response.json()
+        self.assertEqual(data['result'], expectedResult)
+        self.assertEqual(data['Count'], expectedCount)
 
 ##########################################################################
 ## Tests start here ##
@@ -352,10 +361,12 @@ class TestHW4(unittest.TestCase):
     # def test_f_decrease_shard(self):
     #     ipPort = self.view[0]["testScriptAddress"]
     #     targetNode = self.view[-1]["networkIpPortAddress"]
+
+    #     initialShardIDs = self.checkGetAllShardIds(ipPort)
+
     #     self.checkChangeShardNumber(targetNode, 2, 200, "Success", "0,1")
     #     time.sleep(propogationTime)
 
-    #     initialShardIDs = self.checkGetAllShardIds(ipPort)
 
     #     self.assertEqual(2, len(initialShardIDs)-1)
 
@@ -390,8 +401,6 @@ class TestHW4(unittest.TestCase):
 
         members = self.checkGetMembers(ipPort, 0)
 
-        print("membas: ", members)
-
         # check if all members are present
         for view in self.view:
             currIpInShard = view['networkIpPortAddress'] in members
@@ -408,21 +417,28 @@ class TestHW4(unittest.TestCase):
 
         members = self.checkGetMembers(ipPortOne, 0)
         membersTwo = self.checkGetMembers(ipPortTwo, 0)
-        print("membas2a: ", members)
-        print("membas2b: ", membersTwo)
 
         self.checkChangeShardNumber(ipPortOne, 2, 200, "Success", "0,1")
 
         membersOne = self.checkGetMembers(ipPortOne, 0)
         membersTwo = self.checkGetMembers(ipPortTwo, 0)
 
-        print("one: ", membersOne)
-        print("two: ", membersTwo)
-
         self.assertEqual(3, len(membersOne))
         self.assertEqual(3, len(membersTwo))
 
+    # changing shard size to 1 have all membbers in the only shard
+    def test_j_shard_count(self):
+        self.test_h_change_shard_size_to_one()
 
+        ipPortOne = self.view[0]["testScriptAddress"]
+       
+        self.checkGetCount(ipPortOne, 0, 200, "Success", "6")
+
+        self.checkChangeShardNumber(ipPortOne, 2, 200, "Success", "0,1")
+
+        self.checkGetCount(ipPortOne, 0, 200, "Success", "3")
+
+        self.checkGetCount(ipPortOne, 1, 200, "Success", "3")
     
     # Test increasing node. PUT node.
 
