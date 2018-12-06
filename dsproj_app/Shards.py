@@ -60,11 +60,17 @@ class Shards:
             self.shard_size = 1
             self.shard_directory["0"] = self.views
 
-        if environ.get("IP_PORT") in self.views:   
-            self.my_shard = str(self.views.index(
-                environ.get("IP_PORT")) % self.shard_size)
+        if environ.get("IP_PORT") in self.views:
+            my_ip = environ.get("IP_PORT")
+            for idx, ips in self.shard_directory.items():
+                if my_ip in self.shard_directory[idx]:
+                    self.my_shard = str(idx)
+            # self.my_shard = str(self.views.index(
+            #     environ.get("IP_PORT")) % self.shard_size)
         else:
             self.my_shard = None
+        print("THIS IS MY SHARD: ", self.my_shard)
+        print("MY SHARD DIRECTORY:", self.shard_directory)
 
     # updates to new number of shards if possible
     # returns {

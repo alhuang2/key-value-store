@@ -6,6 +6,7 @@ import requests
 import re
 from json import dumps
 from dsproj_app.store import Store
+import random
 
 # return JSON pls
 def shard_handler(request, method, route, details):
@@ -22,7 +23,7 @@ def shard_handler(request, method, route, details):
             # route = members/<id>
             return get_members_in_ID(shards, route.split('/')[1])
         elif "count" in route:
-            return get_key_count_of_ID(shards, route.split('/')[1])
+            return get_key_count_of_ID(shards, store, route.split('/')[1])
     elif method == 'PUT':
         body_unicode = request.body.decode('utf-8')
         body = urllib.parse.parse_qs(body_unicode)
@@ -109,8 +110,8 @@ def get_members_in_ID(shards, id):
     response = {}
     status = 400
     members = shards.get_members_in_ID(int(id))
-    members = ",".join(members)
     if members != None:
+        members = ",".join(members)
         response = {
             "result": "Success",
             "members": members
@@ -135,19 +136,45 @@ def get_members_in_ID(shards, id):
 # Status = 404
 
 
-def get_key_count_of_ID(shards, id):
+def get_key_count_of_ID(shards, store, id):
     # print("not implemented yet: ", id)
-    if shards.get_members_in_ID(id) != None:
-        count = Store.kvs_size_of_shard(shards, id)
+    status = 404
+    response = {
+        "result": "Error",
+        "msg": "No shard with id " + str(id)
+    }
+    # if it is not our current shard, request to a node
+    # in that shard for their store size
+    # else, we're in right shard and just return our store size
+    my_shard_id = int(shards.get_my_shard())
+    print("MY SHARD ID: ", my_shard_id)
+    if my_shard_id == int(id):
+        status = 200
         response = {
             "result": "Success",
-            "Count": count
+            "Count": store.length()
         }
-        status = 200
+        return JsonResponse(response, status=status)
     else:
-        response = {
-            "result": "Error",
-            "msg": "No shard with id"+id
-        }
-        status = 404
+        members = shards.get_members_in_ID(int(id))
+        if members != None:
+            random_ip = random.choice(members)
+            url = "http://"+random_ip+"/shard/count/"+str(id)
+            print("URL TO GET COUNT : ", url)
+            response = requests.get(url, data={})
+            return JsonResponse(response.json(), status=response.status_code)
+    # if members != None:
+    # if shards.get_members_in_ID(id) != None:
+    #     count = Store.kvs_size_of_shard(shards, id)
+    #     response = {
+    #         "result": "Success",
+    #         "Count": count
+    #     }
+    #     status = 200
+    # else:
+    #     response = {
+    #         "result": "Error",
+    #         "msg": "No shard with id"+id
+    #     }
+    #     status = 404
     return JsonResponse(response, status=status)
