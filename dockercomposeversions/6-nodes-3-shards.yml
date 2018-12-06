@@ -1,0 +1,116 @@
+version: "3"
+
+services:
+  alice:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: testing:latest
+    command: python3 manage.py runserver 0.0.0.0:8080
+    volumes:
+      - .:/code
+    ports:
+      - "8080:${PORT}"
+    environment:
+      - IP_PORT=10.0.0.20:8080
+      - VIEW=10.0.0.20:8080,10.0.0.21:8080,10.0.0.22:8080,10.0.0.23:8080,10.0.0.24:8080,10.0.0.25:8080
+      - S=3
+    networks:
+      vpcbr:
+        ipv4_address: ${IP}
+
+  bob:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: testing:latest
+    command: python3 manage.py runserver 0.0.0.0:8080
+    volumes:
+      - .:/code
+    ports:
+      - "8081:${PORT}"
+    environment:
+      - IP_PORT=10.0.0.21:8080
+      - VIEW=10.0.0.20:8080,10.0.0.21:8080,10.0.0.22:8080,10.0.0.23:8080,10.0.0.24:8080,10.0.0.25:8080
+      - S=3
+    networks:
+      vpcbr:
+        ipv4_address: 10.0.0.21
+
+  carol:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: testing:latest
+    command: python3 manage.py runserver 0.0.0.0:8080
+    volumes:
+      - .:/code
+    ports:
+      - "8082:${PORT}"
+    environment:
+      - IP_PORT=10.0.0.22:8080
+      - VIEW=10.0.0.20:8080,10.0.0.21:8080,10.0.0.22:8080,10.0.0.23:8080,10.0.0.24:8080,10.0.0.25:8080
+      - S=3
+    networks:
+      vpcbr:
+        ipv4_address: 10.0.0.22
+  diana:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: testing:latest
+    command: python3 manage.py runserver 0.0.0.0:8080
+    volumes:
+      - .:/code
+    ports:
+      - "8083:${PORT}"
+    environment:
+      - IP_PORT=10.0.0.23:8080
+      - VIEW=10.0.0.20:8080,10.0.0.21:8080,10.0.0.22:8080,10.0.0.23:8080,10.0.0.24:8080,10.0.0.25:8080
+      - S=3
+    networks:
+      vpcbr:
+        ipv4_address: 10.0.0.23
+  
+  evan:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: testing:latest
+    command: python3 manage.py runserver 0.0.0.0:8080
+    volumes:
+      - .:/code
+    ports:
+      - "8084:${PORT}"
+    environment:
+      - IP_PORT=10.0.0.24:8080
+      - VIEW=10.0.0.20:8080,10.0.0.21:8080,10.0.0.22:8080,10.0.0.23:8080,10.0.0.24:8080,10.0.0.25:8080
+      - S=3
+    networks:
+      vpcbr:
+        ipv4_address: 10.0.0.24
+  
+  fiona:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: testing:latest
+    command: python3 manage.py runserver 0.0.0.0:8080
+    volumes:
+      - .:/code
+    ports:
+      - "8085:${PORT}"
+    environment:
+      - IP_PORT=10.0.0.25:8080
+      - VIEW=10.0.0.20:8080,10.0.0.21:8080,10.0.0.22:8080,10.0.0.23:8080,10.0.0.24:8080,10.0.0.25:8080
+      - S=3
+    networks:
+      vpcbr:
+        ipv4_address: 10.0.0.25
+
+networks:
+  vpcbr:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.20/27
