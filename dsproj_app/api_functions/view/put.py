@@ -32,13 +32,13 @@ def put_handling(request, details):
 
         # inefficient broadcast. change later
         for curr_ip_port in all_ips.split(","):
-            current_ip_is_not_new_ip and current_ip_is_not_client_ip:
-                requests.put("http://"+curr_ip_port+"/view",
-                            data={'ip_port': new_ip_port})
-        clock.push()urrent_ip_is_not_new_ip = (curr_ip_port != new_ip_port)
+            current_ip_is_not_new_ip = (curr_ip_port != new_ip_port)
             current_ip_is_not_client_ip = (
                 curr_ip_port != environ.get("IP_PORT"))
-            if c
+            if current_ip_is_not_new_ip and current_ip_is_not_client_ip:
+                requests.put("http://"+curr_ip_port+"/view",
+                             data={'ip_port': new_ip_port})
+        clock.push()
         resultmsg = "Success"
         msg = "Successfully added " + new_ip_port + " to view"
         statuscode = 200
