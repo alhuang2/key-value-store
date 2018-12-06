@@ -5,7 +5,7 @@ import urllib.parse
 import requests
 import re
 from json import dumps
-
+from dsproj_app.store import Store
 
 # return JSON pls
 def shard_handler(request, method, route, details):
@@ -24,7 +24,9 @@ def shard_handler(request, method, route, details):
         elif "count" in route:
             return get_key_count_of_ID(shards, route.split('/')[1])
     elif method == 'PUT':
-        num_shards = request.body.decode('utf-8').split('=')[1]
+        body_unicode = request.body.decode('utf-8')
+        body = urllib.parse.parse_qs(body_unicode)
+        num_shards = body['num'][0]
         return put(shards, num_shards, store)
         # GET /shard/my_id
         # GET /shard/all_ids
@@ -57,10 +59,10 @@ def put(shards, num_shards, store):
     status = None
     if response['is_successful']:
     	status = 200
-    	return JsonResponse(dumps(response), status=status)
+    	return JsonResponse(response, status=status)
     else:
-    	status = 200
-    	return JsonResponse(dumps(response), status=status)
+    	status = 400
+    	return JsonResponse(response, status=status)
     	
 
 # returns all id's
@@ -134,6 +136,18 @@ def get_members_in_ID(shards, id):
 
 
 def get_key_count_of_ID(shards, id):
-    response = {}
-    print("not implemented yet: ", id)
-    return JsonResponse(response, status=200)
+    # print("not implemented yet: ", id)
+    if shards.get_members_in_ID(id) != None:
+        count = Store.kvs_size_of_shard(shards, id)
+        response = {
+            "result": "Success",
+            "Count": count
+        }
+        status = 200
+    else:
+        response = {
+            "result": "Error",
+            "msg": "No shard with id"+id
+        }
+        status = 404
+    return JsonResponse(response, status=status)

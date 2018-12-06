@@ -19,9 +19,7 @@ def put_handling(request, details):
 
     all_ips = urllib.parse.unquote_plus(environ.get("VIEW"))
     for curr_ip_port in all_ips.split(","):
-        # print("testddd")
         if curr_ip_port != new_ip_port:
-            # print("http://"+new_ip_port+"/add-view")
             requests.put("http://"+new_ip_port+"/add-view",
                          data={'view': environ.get("VIEW")})
             break

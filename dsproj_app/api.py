@@ -13,6 +13,7 @@ from dsproj_app.Threading import Threading
 from dsproj_app.Shards import Shards
 from dsproj_app.api_functions.broadcast import broadcast
 import json
+import requests
 
 # VAR vc_position: vector clock position of current node
 vc_position = environ.get("VIEW").split(',').index(environ.get("IP_PORT"))
@@ -31,11 +32,10 @@ details = {
     "causal_context": None,
     "clock": clock,
     "latest_timestamp": latest_timestamp,
-    "shards": shards,
-    "should_run_gossip": True
+    "shards": shards
 }
 
-Threading(details, 1)
+Gossip = Threading(details, 1)
 
 # ============= SHARD OPERATIONS =============
 
@@ -50,14 +50,16 @@ def toggle_gossip(request):
     body = parse_qs(body_unicode)
     toggle = body['toggle'][0]
     is_broadcaster = body['is_broadcaster'][0]
-    details['should_run_gossip'] = toggle
-    if not is_broadcaster:
-        broadcast({
-            "toggle": toggle, 
-            "is_broadcaster": False
-            }, 
-            "PUT", "/toggle_gossip", environ.get("IP_PORT")
-        )
+    filter_ip = body['ip_filtered'][0]
+    Gossip.toggle(toggle)
+    # if is_broadcaster:
+    #     ips = environ.get("VIEW").split(",")
+    #     for ip in ips:
+    #         if ip == filter_ip:
+    #             continue
+    #         url = "http://"+ip+"/toggle_gossip"
+    #         data = {"toggle": toggle, "is_broadcaster": False, "ip_filtered": filter_ip}
+    #         requests.put(url, data=data)
     return JsonResponse({"toggle": toggle}, status=200)
 
 @csrf_exempt

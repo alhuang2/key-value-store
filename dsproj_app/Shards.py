@@ -43,7 +43,6 @@ class Shards:
         return self.shard_size
 
     def build_directory(self):
-        
 
         for idx, IP_PORT in enumerate(self.views):
             self.shard_directory[str(idx % self.shard_size)] = []
@@ -83,7 +82,9 @@ class Shards:
             "msg": None,
             "result": "Error"
         }
-        if self.num_nodes >= 2 * num_shards:
+        if num_shards == 0:
+            response['msg'] = "Must have at least one shard"
+        elif self.num_nodes >= 2 * num_shards:
             # redistribute all data and rehash on the new shard
             # call your rehash function here. should refer to store maybe? pass in shards instance if needed
             self.shard_size = num_shards
@@ -91,16 +92,15 @@ class Shards:
             # rehashes the shard directory with new shard #
             self.build_directory()
             store.rehash_keys(self.shard_directory, self.shard_size)
-        elif num_shards == 1:
-            # combine all shard data and put it on all nodes
-            # maybe the same thing as the one above ? ^^
-            pass
-        elif num_shards == 0:
-            response['msg'] = "Must have at least one shard"
+            response = {
+                "is_successful": True,
+                "result": "Success",
+                "shard_ids": self.get_keys()
+            }
         elif num_shards >= self.num_nodes:
-            response['msg'] = "Not enough nodes for "+num_shards+" shards"
+            response['msg'] = "Not enough nodes for "+str(num_shards)+" shards"
         else:
-            response['msg'] = "Not enough nodes. "+num_shards + \
+            response['msg'] = "Not enough nodes. "+str(num_shards) + \
                 " shards result in a nonfault tolerant shard"
         return response
 
@@ -121,8 +121,8 @@ class Shards:
 
     def find_shardID_given_address(self, given_address):
         for key in self.get_directory():
-            print("GODSHITTTT", key)
-            print("GODSHIT", self.get_directory()[key])
+            # print("SHARDID", key)
+            # print("DIRECTORY", self.get_directory()[key])
             for address in self.get_directory()[key]:
                 if given_address == address:
                     return key

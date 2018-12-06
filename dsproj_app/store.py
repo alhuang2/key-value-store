@@ -47,8 +47,12 @@ class Store:
     def rehash_keys(self, directory, num_shards):
         copy_store = self.copy()
         self.store = {}
-        data = {"toggle": False, "is_broadcaster": True}
-        requests.put("http://"+environ.get("IP_PORT")+"/toggle_gossip", data=data)
+        data = {
+            "toggle": False, 
+            "is_broadcaster": True,
+            "ip_filtered": environ.get("IP_PORT")}
+        print("TOGGLING GOSSIP THIS IS BROADCASTER")
+        #requests.put("http://"+environ.get("IP_PORT")+"/toggle_gossip", data=data)
         for key, obj in copy_store.items():
             binary_key = sha1(key.encode())
             shard_location = int(binary_key.hexdigest(),16) % num_shards
@@ -59,8 +63,8 @@ class Store:
             requests.put(
                 "http://"+rand_address+"/keyValue-store/"+key, data=data
             )
-        data = {"toggle": True, "is_broadcaster": True}
-        requests.put("http://"+environ.get("IP_PORT")+"/toggle_gossip", data=data)
+        data = {"toggle": True, "is_broadcaster": True, "ip_filtered": environ.get("IP_PORT")}
+        #requests.put("http://"+environ.get("IP_PORT")+"/toggle_gossip", data=data)
                         
 
     def copy(self):
@@ -77,3 +81,17 @@ class Store:
 
     def overwrite_store(self, new_store):
         self.store = new_store
+
+    def get_store_at_ipport(self, ipport):
+        response = requests.get("http://"+ipport+"/node-info")
+        return response['store']
+
+    def kvs_size_of_shard(self, shards, shard_ID):
+        # count = 0
+        # ip_list = shards.get_members_in_ID(shard_ID)
+        # for ipport in ip_list:
+        #     store_of_ipport = self.get_store_at_ipport(ipport)
+        #     for key in store_of_ipport:
+        #         count += 1
+        # return count
+        pass

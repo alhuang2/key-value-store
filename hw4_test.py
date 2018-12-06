@@ -338,6 +338,11 @@ class TestHW4(unittest.TestCase):
 
         self.assertEqual(len(newShardIDs), len(initialShardIDs)-1)
 
+    # remove a node which resulting a difference of 2 between
+    # shard members causes redistributions
+    def test_f_remove_node(self):
+        pass
+
 
 
 if __name__ == '__main__':

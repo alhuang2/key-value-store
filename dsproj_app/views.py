@@ -31,5 +31,5 @@ def get_array_views(filter=None):
     return environ.get("VIEW").split(",")
 
 
-def get_index_of_ip_in_views(ip_port):
+def get_index_of_target_in_views(ip_port):
     return environ.get("VIEW").split(",").index(ip_port)

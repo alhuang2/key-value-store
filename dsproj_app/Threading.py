@@ -4,6 +4,7 @@ from dsproj_app.VectorClock import VectorClock
 from dsproj_app.views import get_array_views
 from urllib.parse import parse_qs
 from os import environ
+from sys import exc_info
 from time import sleep
 import requests
 import random
@@ -17,20 +18,20 @@ class Threading(object):
         :type interval: int
         :param interval: Check interval, in seconds
         """
-        self.should_run_gossip = details['should_run_gossip']
         self.interval = interval
         self.store = details['store']
         self.clock = details['clock']
         self.latest_timestamp = details['latest_timestamp']
         self.causal_context = details['causal_context']
         self.shards = details['shards']
+        self.should_run = True
         thread = threading.Thread(target=self.run, args=())
         thread.daemon = True
 
         thread.start()                                  # Start the execution
 
-    def stop(self):
-        pass
+    def toggle(self, toggle):
+        self.should_run = toggle
 
     def gossip(self):
 
@@ -65,18 +66,20 @@ class Threading(object):
             random_IP_PORT = random.choice(ip_port_options)
 
             url = "http://" + random_IP_PORT + "/node-info"
-            print("get my members!!!!!!!!!!!!!!!!!!!!!")
-            print("this is shard members", shards_directory[target_shard])
-            print(self.shards.get_shard_size())
+            # print("get my members!!!!!!!!!!!!!!!!!!!!!")
+            # print("this is shard members", shards_directory[target_shard])
+            # print(self.shards.get_shard_size())
+
             try:
+
                 gresponse = requests.get(url, data={})
                 data = gresponse.json() # node to be gossiped (incoming node)
-                print("#################3")
-                print(data)
-                print(self.store.get())
-                print(self.clock.get_vc())
-                print(self.latest_timestamp.get_timestamp())
-                print("#####################")
+                # print("#################3")
+                # print(data)
+                # print(self.store.get())
+                # print(self.clock.get_vc())
+                # print(self.latest_timestamp.get_timestamp())
+                # print("#####################")
                 is_current_clock_greater = clock.greater_than_or_equal(
                     data['clock']) #fucks up at this line
                 # print("a few lines after gossip")
@@ -86,7 +89,7 @@ class Threading(object):
 
                 if len(clock.get_vc()) != len(data['clock']):
                     return "0"
-                print("THIS IS STORE-FIRST!!!!!!!!!!!", self.store.get())
+                # print("THIS IS STORE-FIRST!!!!!!!!!!!", self.store.get())
                 # print("========================")
 
                 # print("data['store']=", data['store'])
@@ -98,7 +101,7 @@ class Threading(object):
                     print("clocks are equal... do nothing")
                     pass
                 elif(is_current_clock_greater == True):
-                    print("current_clock_greater is true")
+                    # print("current_clock_greater is true")
                     text = "vector"
                     new_item = self.merge_and_clobber_loser(
                         data['store'], store.get())
@@ -107,20 +110,18 @@ class Threading(object):
                     self.update_gossip_node(
                         store, clock, latest_timestamp, random_IP_PORT, text)
 
-                    print("THIS IS STORE!!!!!!!!!!!", self.store.get())
+                    # print("THIS IS STORE!!!!!!!!!!!", self.store.get())
                 elif(is_current_clock_greater == False):
-                    print("current_clock_greater is false")
+                    # print("current_clock_greater is false")
                     text = "vector"
                     new_item = self.merge_and_clobber_loser(
                         store.get(), data['store'])
-                    print("THIS IS NEWITEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",new_item)
-                    print("asshole")
-                    print(data['store'])
+                    # print("THIS IS NEWITEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",new_item)
+                    # print(data['store'])
                     data['store'] = new_item
-                    print("THIS IS DATA[store]",data['store'])
+                    # print("THIS IS DATA[store]",data['store'])
                     self.update_local_node(
                         data, clock, latest_timestamp, text, store)
-                    print("anus")
                     # print("THIS IS STORE!!!!!!!!!!!", self.store)
 
                 else:
@@ -144,14 +145,16 @@ class Threading(object):
                         data['store'] = new_item
                         self.update_local_node(
                             data, clock, latest_timestamp, text, store)
+
             except:
                 print("================error in gossip================")
+                print("Error:", exc_info()[0])
 
 
 
     def run(self):
         """ Method that runs forever """
-        while self.should_run_gossip:
+        while self.should_run:
             # Do something
             self.gossip()
             sleep(self.interval)
@@ -195,7 +198,6 @@ class Threading(object):
         latest_timestamp.set_timestamp(data['latest_timestamp'])
 
         # store.copy returns an object
-        print("FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUCCCCCCKKKKKKKKK")
         # print(self.store.copy())
         # data['store'] = self.store.get()
         self.store.overwrite_store(data['store'])
