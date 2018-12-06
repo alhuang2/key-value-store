@@ -7,6 +7,8 @@ import re
 from json import dumps
 from dsproj_app.store import Store
 import random
+from os import environ
+from dsproj_app.views import get_array_views
 
 # return JSON pls
 def shard_handler(request, method, route, details):
@@ -28,7 +30,10 @@ def shard_handler(request, method, route, details):
         body_unicode = request.body.decode('utf-8')
         body = urllib.parse.parse_qs(body_unicode)
         num_shards = body['num'][0]
-        return put(shards, num_shards, store)
+        should_broadcast = True
+        if 'broadcaster' in body:
+            should_broadcast = False
+        return put(shards, num_shards, store, should_broadcast)
         # GET /shard/my_id
         # GET /shard/all_ids
         # GET /shard/members/<shard_id>
@@ -55,8 +60,20 @@ def shard_handler(request, method, route, details):
         # you should not return the second error message in this case.
 
 
-def put(shards, num_shards, store):
+def put(shards, num_shards, store, should_broadcast):
     response = shards.update(num_shards, store)
+    if should_broadcast == True:
+        payload_to_send = {
+            "num": num_shards,
+            "broadcaster": False
+        }
+        ips = get_array_views()
+        my_ip = environ.get("IP_PORT")
+        for ip in ips:
+            if ip == my_ip:
+                continue
+            url = "http://"+ip+"/shard/changeShardNumber"
+            requests.put(url, data=payload_to_send)
     status = None
     if response['is_successful']:
     	status = 200
