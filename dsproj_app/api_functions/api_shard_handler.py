@@ -4,7 +4,7 @@ from hashlib import sha1
 import urllib.parse
 import requests
 import re
-from json import dumps
+from json import dumps, loads
 from dsproj_app.classes.Store import Store
 import random
 from os import environ
@@ -25,12 +25,17 @@ def shard_handler(request, method, route, details):
             return get_members_in_ID(shards, route.split("/")[1])
         elif "count" in route:
             return get_key_count_of_ID(shards, store, route.split("/")[1])
-        elif "make_invalid" in route:
+    elif method == "PUT":
+        if "make_invalid" in route:
             body_unicode = request.body.decode("utf-8")
             body = urllib.parse.parse_qs(body_unicode)
-            keys = body["keys"][0]
-            return make_invalid(keys, store)
-    elif method == "PUT":
+
+            print("BODY: ")
+            print(body)
+
+            invalid_store = body["store"][0]
+            return make_invalid(invalid_store, store)
+        
         num_shards = body["num"][0]
         should_broadcast = True
         if "broadcaster" in body:
@@ -61,12 +66,11 @@ def shard_handler(request, method, route, details):
         # In this case it should only return an error message if you try to increase the number of shards beyond 1,
         # you should not return the second error message in this case.
 
-
-def make_invalid(keys, store):
-    print("MAKE INVALID: ")
-    print(keys)
-    for key in keys:
+def make_invalid(invalid_store, store):
+    invalid_store = loads(invalid_store)
+    for key, val in invalid_store.items():
         store.add(key, "this-is-invalid", {})
+    return JsonResponse({}, status=200)
 
 
 def put(shards, num_shards, store, should_broadcast):

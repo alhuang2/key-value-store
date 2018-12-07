@@ -1,6 +1,8 @@
 from django.http import JsonResponse
 from os import environ
+
 from dsproj_app.views import get_array_views, get_index_of_target_in_views
+
 import requests
 import json
 import urllib.parse
@@ -37,21 +39,33 @@ def exchange_shards(
     shards.remove_node(shard_index_of_target, ip_port_to_delete)
 
 
-def broadcast_unable_to_access(shards, dead_shard):
+def broadcast_unable_to_access(shards, invalid_store, store):
     # set other shards to show "Unable to access key: <key>"
-    for shard_id, shard_members in shards.get_directory.items():
-        if shard_id != dead_shard:
-            for member in shard_members:
-                data = {"keys": dead_shard.get_keys()}
-                requests.put(
-                    "http://" + member + "/shard/make_invalid", data=json.dumps(data)
-                )
+    for shard_id, shard_members in shards.get_directory().items():
+        if environ.get("IP_PORT") in shard_members:
+            for key, val in invalid_store.items():
+                store.add(key, "this-is-invalid", {})
+        else:
+            requests.put(
+                "http://" + shard_members[0] + "/shard/make_invalid", data="store="+json.dumps(invalid_store)
+            )
 
+def delete_shard_and_broadcast(shards, shard_index_of_target, ip_port_to_delete, store):
+    print("BROADCAST UNABLE TO ACCESS")
+    invalid_store = requests.put("http://"+ip_port_to_delete+"/node-info").json()
+    invalid_store = invalid_store["store"]
+    shards.delete_shard_directory_key(shard_index_of_target)
+    return broadcast_unable_to_access(shards, invalid_store, store)
 
-def reconstruct_shard(shards, index_to_delete, ip_port_to_delete):
+def reconstruct_shard(shards, index_to_delete, ip_port_to_delete, store):
     shard_directory = shards.get_directory()
     shard_index_of_target = index_to_delete % shards.get_shard_size()
     shard_members_of_target = shards.get_members_in_ID(shard_index_of_target)
+
+    print("shard_members: ")
+    print(shard_members_of_target)
+    if len(shard_members_of_target) == 1:
+        return delete_shard_and_broadcast(shards, shard_index_of_target, ip_port_to_delete, store)
 
     for shard_id, nodes in shard_directory.items():
         members_of_shard_id = shards.get_members_in_ID(shard_id)
@@ -84,10 +98,7 @@ def reconstruct_shard(shards, index_to_delete, ip_port_to_delete):
                 shard_index_of_target, ip_port_to_delete
             )
         length_of_target_shard = len(shards.get_members_in_ID(shard_index_of_target))
-        if length_of_target_shard == 0:
-            print("BROADCAST UNABLE TO ACCESS")
-            broadcast_unable_to_access(shards)
-        elif length_of_target_shard == 1:
+        if length_of_target_shard == 1:
             shards.change_shard_size_superficial(shards.get_shard_size() - 1)
 
 
@@ -105,6 +116,7 @@ def broadcast(ip_port_to_delete, ips):
 def delete_handling(request, details):
     clock = details["clock"]
     shards = details["shards"]
+    store = details["store"]
 
     body_unicode = request.body.decode("utf-8")
     body = urllib.parse.parse_qs(body_unicode)
@@ -128,7 +140,7 @@ def delete_handling(request, details):
 
         delete_ip(clock, ip_port_to_delete, ips, shards)
 
-        reconstruct_shard(shards, index_to_delete, ip_port_to_delete)
+        reconstruct_shard(shards, index_to_delete, ip_port_to_delete, store)
 
         if checkpoint is None:
             broadcast(ip_port_to_delete, ips)

@@ -24,7 +24,6 @@ class Threading(object):
         self.latest_timestamp = details["latest_timestamp"]
         self.causal_context = details["causal_context"]
         self.shards = details["shards"]
-        # self.should_run = True
         thread = threading.Thread(target=self.run, args=())
         thread.daemon = True
 
@@ -40,15 +39,6 @@ class Threading(object):
         latest_timestamp = self.latest_timestamp
         causal_context = self.causal_context
 
-        # members = self.shards.get_members_in_ID(self.shards.get_my_shard())
-        # print("==========MEMBERS:==========", members)
-        # # random_IP_PORT = random.choice(members)
-        # if members != None:
-        #     members.remove(environ.get("IP_PORT"))
-        #     random_IP_PORT = random.choice(members)
-        # else:
-        #     return
-
         view_arr = environ.get("VIEW").split(",")
         # print(view_arr)
         # print("========================")
@@ -60,51 +50,40 @@ class Threading(object):
                 environ.get("IP_PORT")
             )
             shards_directory = self.shards.get_directory()
-            # print(target_shard)
             ip_port_options = []
+
+            if target_shard == None or target_shard not in shards_directory:
+                return
+
             for ipport in shards_directory[target_shard]:
                 ip_port_options.append(ipport)
-            ip_port_options.remove(environ.get("IP_PORT"))
 
-            if len(ip_port_options) < 1 or target_shard == None:
+            if environ.get("IP_PORT") in ip_port_options:
+                ip_port_options.remove(environ.get("IP_PORT"))
+
+            if len(ip_port_options) < 1:
                 return
+                
             random_IP_PORT = random.choice(ip_port_options)
 
             url = "http://" + random_IP_PORT + "/node-info"
-            # print("get my members!!!!!!!!!!!!!!!!!!!!!")
-            # print("this is shard members", shards_directory[target_shard])
-            # print(self.shards.get_shard_size())
 
             try:
 
                 gresponse = requests.get(url, data={})
                 data = gresponse.json()  # node to be gossiped (incoming node)
-                # print("#################3")
-                # print(data)
-                # print(self.store.get())
-                # print(self.clock.get_vc())
-                # print(self.latest_timestamp.get_timestamp())
-                # print("#####################")
                 is_current_clock_greater = clock.greater_than_or_equal(
                     data["clock"]
                 )  # fucks up at this line
-                # print("a few lines after gossip")
 
-                print("LOCAL clock = ", clock.get_vc())
-                print("OTHER clock = ", data["clock"])
+                # print("LOCAL clock = ", clock.get_vc())
+                # print("OTHER clock = ", data["clock"])
 
                 if len(clock.get_vc()) != len(data["clock"]):
                     return "0"
-                # print("THIS IS STORE-FIRST!!!!!!!!!!!", self.store.get())
-                # print("========================")
-
-                # print("data['store']=", data['store'])
-                # print("type = ", type(data['store']))
-                # print("store.get()=", store.get())
-                # print("type = ", type(store.get()))
 
                 if is_current_clock_greater == "equal":
-                    print("clocks are equal... do nothing")
+                    # print("clocks are equal... do nothing")
                     pass
                 elif is_current_clock_greater == True:
                     # print("current_clock_greater is true")
@@ -116,17 +95,11 @@ class Threading(object):
                         store, clock, latest_timestamp, random_IP_PORT, text
                     )
 
-                    # print("THIS IS STORE!!!!!!!!!!!", self.store.get())
                 elif is_current_clock_greater == False:
-                    # print("current_clock_greater is false")
                     text = "vector"
                     new_item = self.merge_and_clobber_loser(store.get(), data["store"])
-                    # print("THIS IS NEWITEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",new_item)
-                    # print(data['store'])
                     data["store"] = new_item
-                    # print("THIS IS DATA[store]",data['store'])
                     self.update_local_node(data, clock, latest_timestamp, text, store)
-                    # print("THIS IS STORE!!!!!!!!!!!", self.store)
 
                 else:
                     text = "timestamp"
@@ -155,9 +128,9 @@ class Threading(object):
                             data, clock, latest_timestamp, text, store
                         )
 
-            except:
+            except Exception as e:
                 print("================error in gossip================")
-                print("Error:", exc_info()[0])
+                print("Error:", e)
 
     def run(self):
         """ Method that runs forever """
@@ -176,14 +149,7 @@ class Threading(object):
 
         # merge
         new_item.update(winner)
-        print("newitem1: ", new_item)
 
-        # delete any val with tombstone
-        # for key in list(new_item):
-        #     if new_item[key]["tombstone"] == True:
-        #         del new_item[key]
-
-        print("newitem2: ", new_item)
         # update store\
         return new_item
 
@@ -198,7 +164,7 @@ class Threading(object):
         url = "http://" + random_IP_PORT + "/update-node"
         payload = "payload=" + json.dumps(payload)
         requests.put(url, data=payload)
-        print("gossiped node updated via ", text)
+        # print("gossiped node updated via ", text)
 
     def update_local_node(self, data, clock, latest_timestamp, text, store):
         clock.copy_vc(data["clock"])
@@ -208,4 +174,4 @@ class Threading(object):
         # print(self.store.copy())
         # data['store'] = self.store.get()
         self.store.overwrite_store(data["store"])
-        print("local node updated via ", text)
+        # print("local node updated via ", text)

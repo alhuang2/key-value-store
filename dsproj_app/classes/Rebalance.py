@@ -35,6 +35,4 @@ class Rebalance(threading.Thread):
 
     def task(self):
         """The task done by this thread - override in subclasses"""
-        print("Rebalance: ", environ.get("IP_PORT"))
-        print("shard count: ", self.shards.get_shard_size())
         self.shards.update(self.shards.get_shard_size(), self.store)

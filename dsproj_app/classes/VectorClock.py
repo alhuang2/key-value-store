@@ -27,12 +27,15 @@ class VectorClock:
         self.vc[index] += 1
 
     def increment_self(self):
+        print("self.index:", self.index)
         self.vc[self.index] += 1
 
     def push(self):
         self.vc.append(0)
 
     def remove_vc(self, index):
+        if index < self.index:
+            self.index-=1
         self.vc.pop(index)
 
     # True: self.vc is less than other_vc

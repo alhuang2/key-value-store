@@ -26,7 +26,7 @@ class Shards:
     # gets all the IP's associated with that shard ID
     def get_members_in_ID(self, id):
         id = str(id)
-        print("In get_members_in_ID: ", self.shard_directory)
+        # print("In get_members_in_ID: ", self.shard_directory)
         if id in self.shard_directory:
             return self.shard_directory[id]
         else:
@@ -47,6 +47,9 @@ class Shards:
     def change_shard_size_superficial(self, count):
         self.shard_size = count
 
+    def delete_shard_directory_key(self, key):
+        del self.shard_directory[str(key)]
+
     def build_directory(self):
         for idx, IP_PORT in enumerate(self.views):
             self.shard_directory[str(idx % self.shard_size)] = []
@@ -64,6 +67,8 @@ class Shards:
 
     def update(self, num_shards, store):
         if self.past_shard_size != num_shards:
+            print("past: ", self.past_shard_size)
+            print("now: ", num_shards)
             num_shards = int(num_shards)
             response = {"is_successful": False, "msg": None, "result": "Error"}
             if num_shards == 0:
@@ -111,7 +116,6 @@ class Shards:
     def add_node(self, index, node_to_add):
         if (
             str(index) in self.shard_directory
-            and node_to_add in self.shard_directory[str(index)]
         ):
             self.shard_directory[str(index)].append(node_to_add)
             return True
@@ -120,10 +124,8 @@ class Shards:
 
     def reset_shard(self):
         self.shard_directory = {}
-        print("SELF.Shard_size: ", self.shard_size)
         for idx, IP_PORT in enumerate(self.views):
             self.shard_directory[str(idx % self.shard_size)] = []
-        print("SELF.Shard_Directory: ", self.shard_directory)
 
     def find_shardID_given_address(self, given_address):
         for key in self.get_directory():

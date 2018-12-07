@@ -63,6 +63,8 @@ class Store:
             members = directory[str(shard_location)]
             rand_address = random.choice(members)
             data = "val=" + obj["val"] + "&&rebalance=True"
+            print("DATA:::")
+            print(data)
             requests.put("http://" + rand_address + "/keyValue-store/" + key, data=data)
         data = {
             "toggle": True,

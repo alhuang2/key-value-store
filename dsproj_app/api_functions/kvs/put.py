@@ -39,6 +39,8 @@ def put_handling(request, details, key):
     payload_json = None
     if "rebalance" not in body:
         payload_json = val_and_payload(request.body)["payload_json"]
+    else:
+        print("HIII")
 
     val = val_and_payload(request.body)["val"]
 
@@ -68,10 +70,9 @@ def put_handling(request, details, key):
 
     # OPTION: EMPTY PAYLOAD (USER REQUEST)
     else:
-        IP_PORT = environ.get("IP_PORT")
         views = get_array_views()
         req_vc = curr_node_vc.get_vc()
-        req_position = views.index(IP_PORT)
+        req_position = views.index(environ.get("IP_PORT"))
         req_timestamp = time.time()
         if latest_timestamp.get_timestamp() == None:
             latest_timestamp.set_timestamp(req_timestamp)
@@ -102,9 +103,11 @@ def put_handling(request, details, key):
 
     members = shards.get_members_in_ID(shard_location)
     # if in right shard
-    if shard_location != None and not (environ.get("IP_PORT") in members):
+    if shard_location != None:
         if members != None:
             rand_address = random.choice(members)
+            if "rebalance" in body:
+                store.add(key, val, {})
             data = "val=" + val + "&&payload=" + json.dumps(payload_json)
             response = requests.put(
                 "http://" + rand_address + "/keyValue-store/" + key, data=data
@@ -113,7 +116,7 @@ def put_handling(request, details, key):
         else:
             response_content = {
                 "result": "Error",
-                "msg": "No nodes in shard " + shard_location,
+                "msg": "No nodes in shard " + str(shard_location),
                 "payload": payload_json,
             }
             status = 400

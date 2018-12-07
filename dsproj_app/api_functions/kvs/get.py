@@ -79,7 +79,7 @@ def get_handling(request, details, key):
         shard_location = int(binary_key.hexdigest(), 16) % shards.get_shard_size()
 
         # OPTION: WE'RE IN THE WRONG SHARD, REDIRECT REQUEST TO NODE WITH CORRECT SHARD
-        current_node_not_in_shard = not (
+        current_node_not_in_shard = shards.get_members_in_ID(shard_location) is not None and not (
             environ.get("IP_PORT") in shards.get_members_in_ID(shard_location)
         )
         response_content["owner"] = shards.get_my_shard()
