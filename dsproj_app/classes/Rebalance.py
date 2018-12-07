@@ -5,11 +5,12 @@ from os import environ
 class Rebalance(threading.Thread):
     """Thread that executes a task every N seconds"""
     
-    def __init__(self, interval, shards):
+    def __init__(self, interval, shards, store):
 
         self._finished = threading.Event()
         self._interval = interval
         self.shards = shards
+        self.store = store
 
         thread = threading.Thread(target=self.run, args=())
         thread.daemon = True
@@ -35,4 +36,5 @@ class Rebalance(threading.Thread):
     def task(self):
         """The task done by this thread - override in subclasses"""
         print("Rebalance: ", environ.get("IP_PORT"))
-        # self.shards.update(self.shards.get_shard_size() - 1, store)
+        print("shard count: ", self.shards.get_shard_size())
+        self.shards.update(self.shards.get_shard_size(), self.store)

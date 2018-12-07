@@ -20,10 +20,10 @@ from dsproj_app.api_functions.broadcast import broadcast
 
 
 # VAR vc_position: vector clock position of current node
-vc_position = environ.get("VIEW").split(',').index(environ.get("IP_PORT"))
+vc_position = environ.get("VIEW").split(",").index(environ.get("IP_PORT"))
 
 # VAR clock: vector clock object of current node
-clock = VectorClock(len(environ.get("VIEW").split(',')), vc_position)
+clock = VectorClock(len(environ.get("VIEW").split(",")), vc_position)
 
 # Var store: store object of current node
 store = Store()
@@ -36,11 +36,11 @@ details = {
     "causal_context": None,
     "clock": clock,
     "latest_timestamp": latest_timestamp,
-    "shards": shards
+    "shards": shards,
 }
 
 Gossip = Threading(details, 1)
-Rebalance = Rebalance(4, shards)
+Rebalance = Rebalance(2, shards, store)
 # ============= SHARD OPERATIONS =============
 
 
@@ -48,13 +48,14 @@ Rebalance = Rebalance(4, shards)
 def shards_api(request, route):
     return shard_handler(request, request.method, route, details)
 
+
 @csrf_exempt
 def toggle_gossip(request):
-    body_unicode = request.body.decode('utf-8')
+    body_unicode = request.body.decode("utf-8")
     body = parse_qs(body_unicode)
-    toggle = body['toggle'][0]
-    is_broadcaster = body['is_broadcaster'][0]
-    filter_ip = body['ip_filtered'][0]
+    toggle = body["toggle"][0]
+    is_broadcaster = body["is_broadcaster"][0]
+    filter_ip = body["ip_filtered"][0]
     Gossip.toggle(toggle)
     # if is_broadcaster:
     #     ips = environ.get("VIEW").split(",")
@@ -66,14 +67,13 @@ def toggle_gossip(request):
     #         requests.put(url, data=data)
     return JsonResponse({"toggle": toggle}, status=200)
 
+
 @csrf_exempt
 def reset_time(request):
     latest_timestamp.set_timestamp = 0
     store.reset()
     clock.reset()
-    response = {
-        "msg": "Successfully reset node"
-    }
+    response = {"msg": "Successfully reset node"}
     return JsonResponse(response, status=200)
 
 
@@ -81,19 +81,22 @@ def reset_time(request):
 # ROUTE: Adds view
 @csrf_exempt
 def add_view(request):
-    body_unicode = request.body.decode('utf-8')
+    body_unicode = request.body.decode("utf-8")
     body = parse_qs(body_unicode)
-    view = body['view'][0]
+    view = body["view"][0]
     environ["VIEW"] = view
-    views = environ.get("VIEW").split(',')
-    clock.copy_vc([0]*len(views))
+    views = environ.get("VIEW").split(",")
+    clock.copy_vc([0] * len(views))
     return JsonResponse(view, status=200, safe=False)
+
+
 # ROUTE: VIEW requests goes here
 
 
 @csrf_exempt
 def view(request):
     return view_request(request, details)
+
 
 # ============= KVS OPERATIONS =============
 # ROUTE: GET, PUT, DELETE requests goes here
@@ -103,12 +106,14 @@ def view(request):
 def keyValue_store(request, key):
     return keyValue_store_request(request, details, key)
 
+
 # ROUTE: Edge case for when key not provided
 
 
 @csrf_exempt
 def empty_put(request):
     return JsonResponse({"error": "No key provided"}, status=500)
+
 
 # ============= NODE INFORMATION =============
 # ROUTE: Gets information of Node
@@ -119,9 +124,10 @@ def node_info(request):
     info = {
         "clock": clock.get_vc(),
         "store": store.get(),
-        "latest_timestamp": latest_timestamp.get_timestamp()
+        "latest_timestamp": latest_timestamp.get_timestamp(),
     }
     return JsonResponse(json.loads(json.dumps(info)), status=200, safe=False)
+
 
 # No need for asg4, this was used for gossip
 # ROUTE: update node
@@ -129,13 +135,13 @@ def node_info(request):
 
 @csrf_exempt
 def update_node(request):
-    body_unicode = request.body.decode('utf-8')
+    body_unicode = request.body.decode("utf-8")
     body = parse_qs(body_unicode)
-    payload = (json.loads(body['payload'][0]))['payload']
+    payload = (json.loads(body["payload"][0]))["payload"]
 
     # store.copy(payload['store']) # wrong use of store.copy()!!!!!!!!!!!!!!
     # payload['store'] = store.copy()
-    store.overwrite_store(payload['store'])
-    clock.copy_vc(payload['clock'])
-    latest_timestamp.set_timestamp(payload['latest_timestamp'])
+    store.overwrite_store(payload["store"])
+    clock.copy_vc(payload["clock"])
+    latest_timestamp.set_timestamp(payload["latest_timestamp"])
     return JsonResponse({"status": "Updated node"}, status=200)

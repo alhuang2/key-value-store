@@ -43,6 +43,9 @@ class Shards:
     def get_shard_size(self):
         return self.shard_size
 
+    def change_shard_size_superficial(self, count):
+        self.shard_size = count
+
     def build_directory(self):
         
         for idx, IP_PORT in enumerate(self.views):
