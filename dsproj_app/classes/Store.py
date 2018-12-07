@@ -4,6 +4,7 @@ from hashlib import sha1
 from os import environ
 import json
 
+
 class Store:
 
     # tomstone = True means deleted
@@ -33,7 +34,7 @@ class Store:
         self.store[key] = {
             "val": value,
             "causal_context": causal_context,
-            "tombstone": False
+            "tombstone": False,
         }
         return True
 
@@ -44,29 +45,31 @@ class Store:
             return True
         else:
             return False
-    
+
     def rehash_keys(self, directory, num_shards):
         copy_store = self.copy()
         self.store = {}
         data = {
-            "toggle": False, 
+            "toggle": False,
             "is_broadcaster": True,
-            "ip_filtered": environ.get("IP_PORT")}
-        print("TOGGLING GOSSIP THIS IS BROADCASTER")
-        #requests.put("http://"+environ.get("IP_PORT")+"/toggle_gossip", data=data)
+            "ip_filtered": environ.get("IP_PORT"),
+        }
+        # print("TOGGLING GOSSIP THIS IS BROADCASTER")
+        # requests.put("http://"+environ.get("IP_PORT")+"/toggle_gossip", data=data)
         for key, obj in copy_store.items():
             binary_key = sha1(key.encode())
-            shard_location = int(binary_key.hexdigest(),16) % num_shards
+            shard_location = int(binary_key.hexdigest(), 16) % num_shards
+
             members = directory[str(shard_location)]
             rand_address = random.choice(members)
-
-            data = "val="+obj['val']+"&&payload={}"
-            requests.put(
-                "http://"+rand_address+"/keyValue-store/"+key, data=data
-            )
-        data = {"toggle": True, "is_broadcaster": True, "ip_filtered": environ.get("IP_PORT")}
-        #requests.put("http://"+environ.get("IP_PORT")+"/toggle_gossip", data=data)
-                        
+            data = "val=" + obj["val"] + "&&rebalance=True"
+            requests.put("http://" + rand_address + "/keyValue-store/" + key, data=data)
+        data = {
+            "toggle": True,
+            "is_broadcaster": True,
+            "ip_filtered": environ.get("IP_PORT"),
+        }
+        # requests.put("http://"+environ.get("IP_PORT")+"/toggle_gossip", data=data)
 
     def copy(self):
         new_store = {}

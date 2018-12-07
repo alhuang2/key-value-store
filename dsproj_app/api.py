@@ -8,7 +8,7 @@ import requests
 
 from dsproj_app.classes.Timestamp import Timestamp
 from dsproj_app.classes.VectorClock import VectorClock
-from dsproj_app.classes.store import Store
+from dsproj_app.classes.Store import Store
 from dsproj_app.classes.Threading import Threading
 from dsproj_app.classes.Rebalance import Rebalance
 from dsproj_app.classes.Shards import Shards
@@ -40,7 +40,7 @@ details = {
 }
 
 Gossip = Threading(details, 1)
-Rebalance = Rebalance(2, shards, store)
+Rebalance = Rebalance(10, shards, store)
 # ============= SHARD OPERATIONS =============
 
 
@@ -49,23 +49,23 @@ def shards_api(request, route):
     return shard_handler(request, request.method, route, details)
 
 
-@csrf_exempt
-def toggle_gossip(request):
-    body_unicode = request.body.decode("utf-8")
-    body = parse_qs(body_unicode)
-    toggle = body["toggle"][0]
-    is_broadcaster = body["is_broadcaster"][0]
-    filter_ip = body["ip_filtered"][0]
-    Gossip.toggle(toggle)
-    # if is_broadcaster:
-    #     ips = environ.get("VIEW").split(",")
-    #     for ip in ips:
-    #         if ip == filter_ip:
-    #             continue
-    #         url = "http://"+ip+"/toggle_gossip"
-    #         data = {"toggle": toggle, "is_broadcaster": False, "ip_filtered": filter_ip}
-    #         requests.put(url, data=data)
-    return JsonResponse({"toggle": toggle}, status=200)
+# @csrf_exempt
+# def toggle_gossip(request):
+#     body_unicode = request.body.decode("utf-8")
+#     body = parse_qs(body_unicode)
+#     toggle = body["toggle"][0]
+#     is_broadcaster = body["is_broadcaster"][0]
+#     filter_ip = body["ip_filtered"][0]
+#     Gossip.toggle(toggle)
+#     # if is_broadcaster:
+#     #     ips = environ.get("VIEW").split(",")
+#     #     for ip in ips:
+#     #         if ip == filter_ip:
+#     #             continue
+#     #         url = "http://"+ip+"/toggle_gossip"
+#     #         data = {"toggle": toggle, "is_broadcaster": False, "ip_filtered": filter_ip}
+#     #         requests.put(url, data=data)
+#     return JsonResponse({"toggle": toggle}, status=200)
 
 
 @csrf_exempt
@@ -73,6 +73,13 @@ def reset_time(request):
     latest_timestamp.set_timestamp = 0
     store.reset()
     clock.reset()
+    response = {"msg": "Successfully reset node"}
+    return JsonResponse(response, status=200)
+
+
+@csrf_exempt
+def reset_store(request, new_store):
+
     response = {"msg": "Successfully reset node"}
     return JsonResponse(response, status=200)
 

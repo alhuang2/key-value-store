@@ -5,6 +5,7 @@ from os import environ
 class Shards:
     def __init__(self, number):
         self.shard_size = int(number)
+        self.past_shard_size = int(number)
         self.views = get_array_views()
         self.num_nodes = len(self.views)
         self.shard_directory = {}
@@ -47,63 +48,76 @@ class Shards:
         self.shard_size = count
 
     def build_directory(self):
-        
         for idx, IP_PORT in enumerate(self.views):
             self.shard_directory[str(idx % self.shard_size)] = []
 
         if self.num_nodes >= 2 * self.shard_size:
             for idx, IP_PORT in enumerate(self.views):
-                self.shard_directory[str(
-                    idx % self.shard_size)].append(IP_PORT)
-        elif self.shard_size >= self.num_nodes and self.num_nodes/2 > 1:
-            self.shard_size = self.num_nodes/2
+                self.shard_directory[str(idx % self.shard_size)].append(IP_PORT)
+        elif self.shard_size >= self.num_nodes and self.num_nodes / 2 > 1:
+            self.shard_size = self.num_nodes / 2
             for idx, IP_PORT in enumerate(self.views):
-                self.shard_directory[str(
-                    idx % self.shard_size)].append(IP_PORT)
+                self.shard_directory[str(idx % self.shard_size)].append(IP_PORT)
         else:
             self.shard_size = 1
             self.shard_directory["0"] = self.views
 
     def update(self, num_shards, store):
-        num_shards = int(num_shards)
-        response = {
-            "is_successful": False,
-            "msg": None,
-            "result": "Error"
-        }
-        if num_shards == 0:
-            response['msg'] = "Must have at least one shard"
-        elif self.num_nodes >= 2 * num_shards:
-            # redistribute all data and rehash on the new shard
-            # call your rehash function here. should refer to store maybe? pass in shards instance if needed
+        if self.past_shard_size != num_shards:
+            num_shards = int(num_shards)
+            response = {"is_successful": False, "msg": None, "result": "Error"}
+            if num_shards == 0:
+                response["msg"] = "Must have at least one shard"
+            elif self.num_nodes >= 2 * num_shards:
+                # redistribute all data and rehash on the new shard
+                # call your rehash function here. should refer to store maybe? pass in shards instance if needed
 
-            self.shard_size = num_shards
-            self.reset_shard()
-            # rehashes the shard directory with new shard #
-            self.build_directory()
-            store.rehash_keys(self.shard_directory, self.shard_size)
-            response = {
-                "is_successful": True,
-                "result": "Success",
-                "shard_ids": self.get_keys()
-            }
-        elif num_shards >= self.num_nodes:
-            response['msg'] = "Not enough nodes for "+str(num_shards)+" shards"
-        else:
-            response['msg'] = "Not enough nodes. "+str(num_shards) + \
-                " shards result in a nonfault tolerant shard"
-        return response
+                self.shard_size = num_shards
+                self.reset_shard()
+                # rehashes the shard directory with new shard #
+                self.build_directory()
+                store.rehash_keys(self.shard_directory, self.shard_size)
+                response = {
+                    "is_successful": True,
+                    "result": "Success",
+                    "shard_ids": self.get_keys(),
+                }
+            elif num_shards >= self.num_nodes:
+                response["msg"] = "Not enough nodes for " + str(num_shards) + " shards"
+            else:
+                response["msg"] = (
+                    "Not enough nodes. "
+                    + str(num_shards)
+                    + " shards result in a nonfault tolerant shard"
+                )
+            self.past_shard_size = self.shard_size
+            return response
+        return None
 
     def update_view(self):
         self.views = get_array_views()
         self.num_nodes = len(self.views)
 
     def remove_node(self, index, node_to_delete):
-        self.shard_directory[str(index)].remove(node_to_delete)
+        if (
+            str(index) in self.shard_directory
+            and node_to_delete in self.shard_directory[str(index)]
+        ):
+            self.shard_directory[str(index)].remove(node_to_delete)
+            return True
+        else:
+            return None
 
     def add_node(self, index, node_to_add):
-        self.shard_directory[str(index)].append(node_to_add)
-    
+        if (
+            str(index) in self.shard_directory
+            and node_to_add in self.shard_directory[str(index)]
+        ):
+            self.shard_directory[str(index)].append(node_to_add)
+            return True
+        else:
+            return None
+
     def reset_shard(self):
         self.shard_directory = {}
         print("SELF.Shard_size: ", self.shard_size)
@@ -118,4 +132,3 @@ class Shards:
             for address in self.get_directory()[key]:
                 if given_address == address:
                     return key
-                

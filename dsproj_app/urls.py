@@ -8,17 +8,19 @@ urlpatterns = [
     # GET /keyValue-store/<key> -d “payload=<payload>”
     # PUT /keyValue-store/<key> -d “val=<value>&&payload=<payload>”
     # DELETE  /keyValue-store/<key> -d “payload=<payload>”
-    path('keyValue-store/<key>', api.keyValue_store, name='keyValue_store_gpd'),
-    path('keyValue-store/', api.empty_put, name='keyValue_store_gpd'),
-
+    path("keyValue-store/<key>", api.keyValue_store, name="keyValue_store_gpd"),
+    path("keyValue-store/", api.empty_put, name="keyValue_store_gpd"),
     # SEARCH /keyValue-store/search/<key> -d “payload=<payload>”
-    path('keyValue-store/search/<key>', api.keyValue_store,
-         name='keyValue_store_get_search'),
-    path('node-info', api.node_info, name="node_info"),
-    path('update-node', api.update_node, name="update_node"),
-    path('add-view', api.add_view, name="add_view"),
-    path('reset', api.reset_time, name="reset"),
-    path('view', api.view, name="view_get"),
-    path('toggle_gossip', api.toggle_gossip, name="toggle_gossip"),
-    re_path(r'^shard/(?P<route>.*)$', api.shards_api, name='sharding')
+    path(
+        "keyValue-store/search/<key>",
+        api.keyValue_store,
+        name="keyValue_store_get_search",
+    ),
+    path("node-info", api.node_info, name="node_info"),
+    path("update-node", api.update_node, name="update_node"),
+    path("add-view", api.add_view, name="add_view"),
+    path("reset", api.reset_time, name="reset"),
+    path("view", api.view, name="view_get"),
+    # path("toggle_gossip", api.toggle_gossip, name="toggle_gossip"),
+    re_path(r"^shard/(?P<route>.*)$", api.shards_api, name="sharding"),
 ]

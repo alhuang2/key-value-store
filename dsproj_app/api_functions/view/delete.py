@@ -14,7 +14,7 @@ def get_ip(request_body):
     return ip_port_to_delete
 
 
-def delete_ip(clock, ip_port_to_delete, ips):
+def delete_ip(clock, ip_port_to_delete, ips, shards):
     ip_port_array = environ.get("VIEW").split(",")
     clock.remove_vc(ip_port_array.index(ip_port_to_delete))
 
@@ -39,9 +39,13 @@ def exchange_shards(
 
 def broadcast_unable_to_access(shards, dead_shard):
     # set other shards to show "Unable to access key: <key>"
-    # for shard_id, shard_members in shards.get_directory.items():
-    #     if shard_id != dead_shard:
-    pass
+    for shard_id, shard_members in shards.get_directory.items():
+        if shard_id != dead_shard:
+            for member in shard_members:
+                data = {"keys": dead_shard.get_keys()}
+                requests.put(
+                    "http://" + member + "/shard/make_invalid", data=json.dumps(data)
+                )
 
 
 def reconstruct_shard(shards, index_to_delete, ip_port_to_delete):
@@ -74,9 +78,14 @@ def reconstruct_shard(shards, index_to_delete, ip_port_to_delete):
     )
 
     if target_still_in_target_shard:
-        shards.remove_node(shard_index_of_target, ip_port_to_delete)
+        success_delete = shards.remove_node(shard_index_of_target, ip_port_to_delete)
+        while not success_delete:
+            success_delete = shards.remove_node(
+                shard_index_of_target, ip_port_to_delete
+            )
         length_of_target_shard = len(shards.get_members_in_ID(shard_index_of_target))
         if length_of_target_shard == 0:
+            print("BROADCAST UNABLE TO ACCESS")
             broadcast_unable_to_access(shards)
         elif length_of_target_shard == 1:
             shards.change_shard_size_superficial(shards.get_shard_size() - 1)
@@ -117,7 +126,7 @@ def delete_handling(request, details):
     if ip_port_to_delete in ips:
         index_to_delete = get_index_of_target_in_views(ip_port_to_delete)
 
-        delete_ip(clock, ip_port_to_delete, ips)
+        delete_ip(clock, ip_port_to_delete, ips, shards)
 
         reconstruct_shard(shards, index_to_delete, ip_port_to_delete)
 

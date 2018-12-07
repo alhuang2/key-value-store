@@ -24,18 +24,28 @@ def get_handling(request, details, key):
         response_content = {
             "result": "Error",
             "msg": "Not provided",
-            "error": "Key does not exist"
+            "error": "Key does not exist",
         }
         return JsonResponse(response_content, status=422)
 
+    if store.is_exists(key):
+        value = store.get_item(key)["val"]
+        if value == "this-is-invalid":
+            response_content = {
+                "result": "Error",
+                "msg": "Unable to access key: " + key,
+                "payload": payload_json,
+            }
+            return JsonResponse(response_content, status=400)
+
     # OPTION: SEARCH-GET
     if "/keyValue-store/search" in request.path:
-        response_content['result'] = "Success"
-        response_content['payload'] = payload_json
+        response_content["result"] = "Success"
+        response_content["payload"] = payload_json
         if store.is_exists(key):
-            response_content['isExists'] = True
+            response_content["isExists"] = True
         else:
-            response_content['isExists'] = False
+            response_content["isExists"] = False
         return JsonResponse(response_content, status=200)
 
     # OPTION: EMPTY PAYLOAD (USER REQUEST), HASH KEY AND CHECK SHARD DIRECTORY
@@ -47,46 +57,47 @@ def get_handling(request, details, key):
             "causal_context": details["causal_context"],
         }
         details["causal_context"] = None
-        data = "payload="+json.dumps(payload_json)
+        data = "payload=" + json.dumps(payload_json)
 
         if store.is_exists(key):
             response_content = {
                 "result": "Success",
-                "val": store.get_item(key)['val'],
-                "payload": payload_json
+                "val": store.get_item(key)["val"],
+                "payload": payload_json,
             }
             status = 200
         else:
             response_content = {
                 "result": "Error",
                 "msg": "Key does not exist",
-                "payload": payload_json
+                "payload": payload_json,
             }
             status = 404
 
         shard_location = None
         binary_key = sha1(key.encode())
-        shard_location = int(binary_key.hexdigest(),
-                            16) % shards.get_shard_size()
+        shard_location = int(binary_key.hexdigest(), 16) % shards.get_shard_size()
 
         # OPTION: WE'RE IN THE WRONG SHARD, REDIRECT REQUEST TO NODE WITH CORRECT SHARD
-        current_node_not_in_shard = not (environ.get(
-            "IP_PORT") in shards.get_members_in_ID(shard_location))
+        current_node_not_in_shard = not (
+            environ.get("IP_PORT") in shards.get_members_in_ID(shard_location)
+        )
         response_content["owner"] = shards.get_my_shard()
-        if (current_node_not_in_shard):
+        if current_node_not_in_shard:
             members = shards.get_members_in_ID(shard_location)
-            if members != None:
+            if members != None and len(members) > 0:
                 print("THIS IS MEMBERS!!!", members)
                 rand_address = random.choice(members)
-                data = "payload="+json.dumps(payload_json)
+                data = "payload=" + json.dumps(payload_json)
                 response = requests.get(
-                    "http://"+rand_address+"/keyValue-store/"+key, data=data)
+                    "http://" + rand_address + "/keyValue-store/" + key, data=data
+                )
                 return JsonResponse(response.json(), status=response.status_code)
             else:
                 response_content = {
                     "result": "Error",
                     "msg": "No nodes in shard " + shard_location,
-                    "payload": payload_json
+                    "payload": payload_json,
                 }
                 status = 400
                 return JsonResponse(response_content, status=status)
@@ -100,12 +111,9 @@ def get_handling(request, details, key):
 
         # CONDITION: If store already has the key
         if store.is_exists(key):
-            details["causal_context"] = {
-                "key": key,
-                "vc": curr_node_vc.get_vc()
-            }
-            response_content['result'] = "Success"
-            response_content['val'] = store.get_item(key)['val']
+            details["causal_context"] = {"key": key, "vc": curr_node_vc.get_vc()}
+            response_content["result"] = "Success"
+            response_content["val"] = store.get_item(key)["val"]
 
             # payload_json['value'] = store.get_item(key)['val']
             # CONDITION: If causal context exists and requestor's vc > this vc
@@ -116,11 +124,11 @@ def get_handling(request, details, key):
             # CONDITION: if reading an old value, return Payload out of date,
             # remove val from response_content, and set status to 400
             if store.get_item(key)["val"] == "too_old":
-                del response_content['val']
+                del response_content["val"]
                 response_content = {
                     "msg": "Payload out of date",
                     "status": 400,
-                    "payload": UP_TO_DATE_PAYLOAD
+                    "payload": UP_TO_DATE_PAYLOAD,
                 }
                 status = 400
             status = 200
@@ -128,7 +136,7 @@ def get_handling(request, details, key):
                 "vc": curr_node_vc.get_vc(),
                 "pos": views.index(environ.get("IP_PORT")),
                 "tstamp": latest_timestamp.get_timestamp(),
-                "causal_context": details["causal_context"]
+                "causal_context": details["causal_context"],
             }
         else:
             payload_json = {
@@ -136,10 +144,10 @@ def get_handling(request, details, key):
                 "vc": curr_node_vc.get_vc(),
                 "pos": views.index(environ.get("IP_PORT")),
                 "tstamp": latest_timestamp.get_timestamp(),
-                "causal_context": details["causal_context"]
+                "causal_context": details["causal_context"],
             }
-            response_content['payload'] = payload_json
+            response_content["payload"] = payload_json
             status = 404
         response_content["owner"] = shards.get_my_shard()
-        response_content['payload'] = payload_json
+        response_content["payload"] = payload_json
     return JsonResponse(response_content, status=status)
