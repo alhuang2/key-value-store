@@ -3,17 +3,21 @@ from django.http import JsonResponse
 from sys import getsizeof
 from os import environ
 from urllib.parse import parse_qs
-from dsproj_app.Timestamp import Timestamp
-from dsproj_app.store import Store
-from dsproj_app.api_functions.kvs.all_kvs_requests import keyValue_store_request
-from dsproj_app.api_functions.view.all_view_requests import view_request
-from dsproj_app.VectorClock import VectorClock
-from dsproj_app.api_functions.api_shard_handler import shard_handler
-from dsproj_app.Threading import Threading
-from dsproj_app.Shards import Shards
-from dsproj_app.api_functions.broadcast import broadcast
 import json
 import requests
+
+from dsproj_app.classes.Timestamp import Timestamp
+from dsproj_app.classes.VectorClock import VectorClock
+from dsproj_app.classes.store import Store
+from dsproj_app.classes.Threading import Threading
+from dsproj_app.classes.Rebalance import Rebalance
+from dsproj_app.classes.Shards import Shards
+
+from dsproj_app.api_functions.kvs.all_kvs_requests import keyValue_store_request
+from dsproj_app.api_functions.view.all_view_requests import view_request
+from dsproj_app.api_functions.api_shard_handler import shard_handler
+from dsproj_app.api_functions.broadcast import broadcast
+
 
 # VAR vc_position: vector clock position of current node
 vc_position = environ.get("VIEW").split(',').index(environ.get("IP_PORT"))
@@ -36,7 +40,7 @@ details = {
 }
 
 Gossip = Threading(details, 1)
-
+Rebalance = Rebalance(4, shards)
 # ============= SHARD OPERATIONS =============
 
 

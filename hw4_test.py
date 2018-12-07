@@ -433,8 +433,8 @@ class TestHW4(unittest.TestCase):
         self.assertEqual(3, len(membersOne))
         self.assertEqual(3, len(membersTwo))
 
-    # when shard decreased and isolated node moved to another shard, 
-    # its keys get shared to rest of shard members, and key owner is 
+    # when shard decreased and an isolated node moved to another shard, 
+    # its keys get shared to rest of shard members, and the key's owner is 
     # consistent with new shard id
     def test_j_key_redistributed(self):
         ipPort = self.view[0]["testScriptAddress"]
@@ -451,20 +451,36 @@ class TestHW4(unittest.TestCase):
 
         time.sleep(propogationTime)
 
-        #❗️again, expected owner might be different based on different shard implementation
-        # we use sha1 as hash function and hash(key1) % 2 = 1
+        #❗️again, expected owner might be different based on different shard mechanic
+        # we use regular hashing and sha1 as hash function -> hash(key1) % 2 = 1
         self.confirmGetKey(targetNode, 'key1', 200, "Success", 'value1', "1")
 
         self.confirmGetKey(ipPort, 'key1', 200, "Success", 'value1', "1")
 
-    # setting shard to zero should be invalid
+    # setting shard to <=0 should be invalid
     def test_k_set_shard_to_zero(self):
         ipPort = self.view[0]["testScriptAddress"]
         self.checkChangeShardNumber(ipPort, 0, 400, "Error", "", "Must have at least one shard")
+
+    # only 1 node in system
+    def test_l_remove_nodes_till_one(self):
+        pass
+
+    # increasing shard to invalid 
     
-    # Test increasing node. PUT node.
+    # If for any of the above /keyValue-store endpoints, you are unable to answer 
+    # the request because the entire shard which owns the key in question is unreachable 
+    # (ie down or network partitioned away)
 
+    #   put key2 = value which direct to shard 2 (E, F)
+    #   delete node E   
+    #   delete node F
+    #   GET key2 from A/B/C/D should return "Unable to access key: <key>
 
+    # If for any of the above /keyValue-store endpoints, you are unable to answer 
+    # the request for causal consistency reasons, please return:
+
+    
 
 if __name__ == '__main__':
-    unittest.main() 
+    unittest.main()

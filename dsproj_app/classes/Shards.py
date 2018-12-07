@@ -25,6 +25,7 @@ class Shards:
     # gets all the IP's associated with that shard ID
     def get_members_in_ID(self, id):
         id = str(id)
+        print("In get_members_in_ID: ", self.shard_directory)
         if id in self.shard_directory:
             return self.shard_directory[id]
         else:
@@ -37,13 +38,13 @@ class Shards:
         return ",".join(keys)
 
     def get_my_shard(self):
-        return self.my_shard
+        return self.find_shardID_given_address(environ.get("IP_PORT"))
 
     def get_shard_size(self):
         return self.shard_size
 
     def build_directory(self):
-
+        
         for idx, IP_PORT in enumerate(self.views):
             self.shard_directory[str(idx % self.shard_size)] = []
 
@@ -60,27 +61,6 @@ class Shards:
             self.shard_size = 1
             self.shard_directory["0"] = self.views
 
-        if environ.get("IP_PORT") in self.views:
-            my_ip = environ.get("IP_PORT")
-            for idx, ips in self.shard_directory.items():
-                if my_ip in self.shard_directory[idx]:
-                    self.my_shard = str(idx)
-            # self.my_shard = str(self.views.index(
-            #     environ.get("IP_PORT")) % self.shard_size)
-        else:
-            self.my_shard = None
-        # print("THIS IS MY SHARD: ", self.my_shard)
-        # print("MY SHARD DIRECTORY:", self.shard_directory)
-
-    # updates to new number of shards if possible
-    # returns {
-    #   "is_successful": True or False,
-    #   "result": Success, Error
-    #   "shard_ids": "0,1,2", IF TRUE
-    #   "msg": "Not enough nodes for <num_shards> shards", IF FALSE
-    #   “msg”: “Not enough nodes. <number> shards result in a nonfault tolerant shard”}, IF FALSE
-    # }
-    # Status = 200 or 400
     def update(self, num_shards, store):
         num_shards = int(num_shards)
         response = {
@@ -93,6 +73,7 @@ class Shards:
         elif self.num_nodes >= 2 * num_shards:
             # redistribute all data and rehash on the new shard
             # call your rehash function here. should refer to store maybe? pass in shards instance if needed
+
             self.shard_size = num_shards
             self.reset_shard()
             # rehashes the shard directory with new shard #
@@ -122,8 +103,10 @@ class Shards:
     
     def reset_shard(self):
         self.shard_directory = {}
+        print("SELF.Shard_size: ", self.shard_size)
         for idx, IP_PORT in enumerate(self.views):
             self.shard_directory[str(idx % self.shard_size)] = []
+        print("SELF.Shard_Directory: ", self.shard_directory)
 
     def find_shardID_given_address(self, given_address):
         for key in self.get_directory():

@@ -1,11 +1,11 @@
 from django.http import JsonResponse
-from dsproj_app.Shards import Shards
+from dsproj_app.classes.Shards import Shards
 from hashlib import sha1
 import urllib.parse
 import requests
 import re
 from json import dumps
-from dsproj_app.store import Store
+from dsproj_app.classes.store import Store
 import random
 from os import environ
 from dsproj_app.views import get_array_views
@@ -22,7 +22,6 @@ def shard_handler(request, method, route, details):
         elif "all_ids" in route:
             return get(shards)
         elif "members" in route:
-            # route = members/<id>
             return get_members_in_ID(shards, route.split('/')[1])
         elif "count" in route:
             return get_key_count_of_ID(shards, store, route.split('/')[1])

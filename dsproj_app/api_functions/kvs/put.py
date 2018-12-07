@@ -1,4 +1,3 @@
-# Actual logic for PUT/DELETE function for leader
 from dsproj_app.api_functions.get_val_and_payload import val_and_payload
 from django.http import JsonResponse
 from sys import getsizeof
@@ -47,20 +46,6 @@ def put_handling(request, details, key):
     shard_location = None
     print("Before: ", payload_json)
 
-    # # OPTION: KEY NEVER EXISTED
-    # if not store.has_key(key):
-    #     response_content['replaced'] = False
-    #     response_content['msg'] = 'Added successfully'
-    #     response_content['payload'] = payload_json
-    #     status = 201
-
-    # # OPTION: KEY ALREADY EXISTS AND IS BEING REPLACED
-    # elif store.has_key(key):
-    #     response_content['replaced'] = True
-    #     response_content['msg'] = 'Updated successfully'
-    #     response_content['payload'] = payload_json
-    #     status = 200
-
     # OPTION: NON-EMPTY PAYLOAD (NODES COMMUNICATING)
     if payload_json:
         req_vc = payload_json['vc']
@@ -74,7 +59,6 @@ def put_handling(request, details, key):
 
     # OPTION: EMPTY PAYLOAD (USER REQUEST)
     else:
-        # curr_node_vc.increment_self()
         IP_PORT = environ.get("IP_PORT")
         views = get_array_views()
         req_vc = curr_node_vc.get_vc()
@@ -83,7 +67,6 @@ def put_handling(request, details, key):
         if latest_timestamp.get_timestamp() == None:
             latest_timestamp.set_timestamp(req_timestamp)
             payload_json['latest_timestamp'] = latest_timestamp.get_timestamp()
-        # payload_json['vc'] = req_vc
         payload_json['pos'] = req_position
         payload_json['tstamp'] = req_timestamp
         payload_json['causal_context'] = details["causal_context"]
@@ -124,7 +107,6 @@ def put_handling(request, details, key):
             }
             status = 400
             return JsonResponse(response_content, status=status)
-    # if in wrong shard
     else:
         curr_node_vc.increment_self()
         payload_json['vc'] = curr_node_vc.get_vc()

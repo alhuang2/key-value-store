@@ -1,6 +1,6 @@
 # from dsproj_app.views import get_array_views
-from dsproj_app.store import Store
-from dsproj_app.VectorClock import VectorClock
+from dsproj_app.classes.store import Store
+from dsproj_app.classes.VectorClock import VectorClock
 from dsproj_app.views import get_array_views
 from urllib.parse import parse_qs
 from os import environ
@@ -26,7 +26,7 @@ class Threading(object):
         self.shards = details['shards']
         self.should_run = True
         thread = threading.Thread(target=self.run, args=())
-        thread.daemon = True
+        # thread.daemon = True
 
         thread.start()                                  # Start the execution
 
