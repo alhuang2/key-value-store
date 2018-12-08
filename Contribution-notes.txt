@@ -1,39 +1,30 @@
 ebisma:
-- Running/setting up the test cases
-- Setup threading for gossip
-- Causal consistency concept/implementation
-- Broadcasting
-- Delete
-- Docker builds
-- View requests
+- Extended test cases
+- Add/remove methods for Shards
+- Updated delete view
+- Refactoring
+- Rebalance threading
 
 jandreas:
-- Main contributor to read/repair
-- Timestamp class
-- Broadcasting requests
-- Vector clock comparisons
-- Timestamp comparisons
-- View requests
-- API requests
+- Made edge cases for testing
+- Debug gossip errors
+- Cleaned up Shard class functions
+- Added to Shards class
+- Edited copy function in Store class
 
 alyehuan:
-- Store class
-- VectorClock class
-- Timestamp class
-- Threading & Gossip
-- PUT and GET updated for client vs node-to-node
-- Broadcasting
-- New rest api's (/node-info, /update-info)
-- View Request
-
-smohan6:
-- Did not contribute
+- Shards class (update/build_directory)
+- Store class (rehashkeys)
+- Delete view refactoring
 
 TEAM:
-We worked many hours together coding together
-Alternated coding
-Bounced ideas off each other
-Did research on debugging errors
-Worked together to review code and find mistakes/bugs
-Conceptual discussions
-Cleaning up code
+- We worked many hours together coding together
+- Alternated coding
+- Bounced ideas off each other
+- Did research on debugging errors
+- Worked together to review code and find mistakes/bugs
+- Conceptual discussions
+- Cleaning up code
+
+smohan6:
+- 😅.

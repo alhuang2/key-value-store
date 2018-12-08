@@ -64,6 +64,7 @@ def get_handling(request, details, key):
                 "result": "Success",
                 "val": store.get_item(key)["val"],
                 "payload": payload_json,
+                "owner": shards.get_my_shard()
             }
             status = 200
         else:
@@ -82,17 +83,24 @@ def get_handling(request, details, key):
         current_node_not_in_shard = shards.get_members_in_ID(shard_location) is not None and not (
             environ.get("IP_PORT") in shards.get_members_in_ID(shard_location)
         )
-        response_content["owner"] = shards.get_my_shard()
         if current_node_not_in_shard:
             members = shards.get_members_in_ID(shard_location)
             if members != None and len(members) > 0:
-                print("THIS IS MEMBERS!!!", members)
                 rand_address = random.choice(members)
                 data = "payload=" + json.dumps(payload_json)
                 response = requests.get(
                     "http://" + rand_address + "/keyValue-store/" + key, data=data
                 )
-                return JsonResponse(response.json(), status=response.status_code)
+                response_content = response.json()
+                if response.status_code == 404:
+                    response_content = {
+                        "result": "Error",
+                        "msg": "Key does not exist",
+                        "payload": payload_json,
+                    }
+                else:
+                    del response_content["owner"]
+                return JsonResponse(response_content, status=response.status_code)
             else:
                 response_content = {
                     "result": "Error",

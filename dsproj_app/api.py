@@ -40,7 +40,7 @@ details = {
 }
 
 Gossip = Threading(details, 1)
-Rebalance = Rebalance(15, shards, store)
+Rebalance = Rebalance(2, shards, store)
 # ============= SHARD OPERATIONS =============
 
 

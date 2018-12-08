@@ -26,10 +26,9 @@ def shard_handler(request, method, route, details):
         elif "count" in route:
             return get_key_count_of_ID(shards, store, route.split("/")[1])
     elif method == "PUT":
+        body_unicode = request.body.decode("utf-8")
+        body = urllib.parse.parse_qs(body_unicode)
         if "make_invalid" in route:
-            body_unicode = request.body.decode("utf-8")
-            body = urllib.parse.parse_qs(body_unicode)
-
             print("BODY: ")
             print(body)
 

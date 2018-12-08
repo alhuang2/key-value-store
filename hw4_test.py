@@ -462,9 +462,37 @@ class TestHW4(unittest.TestCase):
         ipPort = self.view[0]["testScriptAddress"]
         self.checkChangeShardNumber(ipPort, 0, 400, "Error", "", "Must have at least one shard")
 
-    # only 1 node in system
-    def test_l_remove_nodes_till_one(self):
-        pass
+    def test_l_replication_remove_node_dont_talk_to_the_dead(self):
+        key = "TheDeadCannotHear"
+        value = "SoWeCanSayTheySmellAndTheydNeverKnow"
+
+        stationaryNode = self.view[0]["networkIpPortAddress"]
+        removedNode = self.view.pop()
+
+        self.confirmDeleteNode(ipPort=stationaryNode,
+                               removedAddress=removedNode["networkIpPortAddress"],
+                               expectedStatus=200,
+                               expectedResult="Success",
+                               expectedMsg="Successfully removed %s from view" % removedNode["networkIpPortAddress"])
+
+        payload = self.getPayload(stationaryNode, key)
+
+        payload = self.confirmAddKey(ipPort=stationaryNode,
+                                     key=key,
+                                     value=value,
+                                     expectedStatus=200,
+                                     expectedMsg="Added successfully",
+                                     expectedReplaced=False,
+                                     payload=payload)
+
+        time.sleep(propogationTime)
+
+        payload = self.confirmCheckKey(ipPort=removedNode["testScriptAddress"],
+                                       key=key,
+                                       expectedStatus=200,
+                                       expectedResult="Success",
+                                       expectedIsExists=False,
+                                       payload=payload)
 
     # increasing shard to invalid 
     
