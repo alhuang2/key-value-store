@@ -20,21 +20,22 @@ docker exec -it container_id sh
 
 ### API
 
-- Think of other edge cases before due
+API requirements
+1. Every API requires x-www-form-urlencoded format
+2. empty "payload = {}" in data field
+
 - GET
-  - search
-    - localhost:8080/keyValue-store/search/target_key
+  - /<key>
+  - /search/<key>
+    - localhost:8080/keyValue-store/search/<key>
     - true
     - false
-  - getValue
-    - localhost:8080/keyValue-store/getValue/?item=target_key
-    - key exists
-    - key doesn't exist
 - Put
   - localhost:8080/keyValue-store/<key_name>
   - Body: x-www-form-urlencoded
     - key: val
     - value: intended_value
+    - paylaod = {}
   - key too long/short
   - value too long
   - key valid but already exists
@@ -80,7 +81,7 @@ docker exec -it container_id sh
 
 Running the tests:
 docker build -t testing:latest .
-python3 hw3_tests.py
+python3 test_script.py
 after the test:
 docker kill $(docker ps -aq)
 docker rm$(docker ps -aq)
