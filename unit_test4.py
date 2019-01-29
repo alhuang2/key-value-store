@@ -4,9 +4,7 @@ import requests
 import time
 import unittest
 import json
-
 import docker_control
-
 import io
 
 dockerBuildTag = "testing" #put the tag for your docker build here
